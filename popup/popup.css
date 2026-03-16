@@ -1,0 +1,425 @@
+/* SellerForge Popup Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 340px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+.container {
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: #232f3e; /* Amazon dark blue */
+}
+
+.version {
+  font-size: 11px;
+  color: #888;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 14px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Hint text */
+.hint {
+  color: #666;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #ff9900; /* Amazon orange */
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #e68a00;
+}
+
+.btn-danger {
+  background: #d13212;
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b02a0f;
+}
+
+.btn-muted {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.btn-muted:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.btn-small {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-grow {
+  flex: 1;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* User row */
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #f0f0f0;
+}
+
+.user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-email {
+  font-size: 11px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f7f7f7;
+  border-radius: 6px;
+}
+
+.status-label {
+  font-weight: 600;
+  color: #555;
+}
+
+.status-value {
+  font-weight: 600;
+  color: #232f3e;
+  text-transform: capitalize;
+}
+
+.current-order {
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #555;
+  background: #fafafa;
+  border-radius: 4px;
+}
+
+#current-order-id {
+  font-weight: 600;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 11px;
+}
+
+#progress-fraction {
+  float: right;
+  color: #888;
+  font-size: 11px;
+}
+
+/* Counter grid */
+.counter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  background: #f7f7f7;
+  border-radius: 6px;
+}
+
+.counter-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #232f3e;
+}
+
+.counter-label {
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+  text-align: center;
+}
+
+.counter-success .counter-value { color: #067d62; }
+.counter-warn .counter-value    { color: #b8860b; }
+.counter-info .counter-value    { color: #0073bb; }
+.counter-error .counter-value   { color: #d13212; }
+
+/* Error bar */
+.error-bar {
+  padding: 8px 10px;
+  background: #fef0ef;
+  border: 1px solid #f5c6c0;
+  border-radius: 6px;
+  color: #d13212;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+/* Requested Orders Table */
+#orders-list-section {
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.orders-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.orders-list-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #232f3e;
+}
+
+.orders-list-empty {
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.orders-table th {
+  text-align: left;
+  font-weight: 600;
+  color: #555;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 4px 6px;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.orders-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1a1a1a;
+}
+
+.orders-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.th-num { width: 24px; }
+
+.td-id {
+  font-weight: 600;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 11px;
+}
+
+.td-date {
+  color: #888;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.orders-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.page-info {
+  font-size: 11px;
+  color: #888;
+}
+
+/* Schedule */
+#schedule-section {
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.schedule-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #232f3e;
+}
+
+.toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  display: inline-block;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #ccc;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggle-slider {
+  background: #ff9900;
+}
+
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+}
+
+.schedule-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+}
+
+.field-input {
+  padding: 6px 8px;
+  border: 1px solid #d5d5d5;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: #ff9900;
+}
+
+.schedule-status {
+  font-size: 11px;
+  color: #067d62;
+  text-align: center;
+  margin-top: 2px;
+}

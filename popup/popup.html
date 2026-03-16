@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SellerForge</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="logo">SellerForge</h1>
+      <span class="version">v1.0</span>
+    </header>
+
+    <!-- Auth Section -->
+    <section id="auth-section" class="section">
+      <div id="signed-out-view">
+        <p class="hint">Sign in to get started</p>
+        <button id="btn-sign-in" class="btn btn-primary btn-full">
+          Sign in with Google
+        </button>
+      </div>
+      <div id="signed-in-view" class="hidden">
+        <div class="user-row">
+          <img id="user-avatar" class="avatar" src="" alt="avatar">
+          <div class="user-info">
+            <span id="user-name" class="user-name"></span>
+            <span id="user-email" class="user-email"></span>
+          </div>
+          <button id="btn-sign-out" class="btn btn-small btn-muted">Sign out</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls Section -->
+    <section id="controls-section" class="section hidden">
+      <div class="btn-row">
+        <button id="btn-start" class="btn btn-primary btn-grow">Start</button>
+        <button id="btn-stop" class="btn btn-danger btn-grow" disabled>Stop</button>
+      </div>
+    </section>
+
+    <!-- Status Section -->
+    <section id="status-section" class="section hidden">
+      <div class="status-bar">
+        <span class="status-label">Status:</span>
+        <span id="status-text" class="status-value">Idle</span>
+      </div>
+      <div id="current-order" class="current-order hidden">
+        Processing: <span id="current-order-id"></span>
+        <span id="progress-fraction"></span>
+      </div>
+    </section>
+
+    <!-- Counters Section -->
+    <section id="counters-section" class="section hidden">
+      <div class="counter-grid">
+        <div class="counter">
+          <span class="counter-value" id="count-discovered">0</span>
+          <span class="counter-label">Discovered</span>
+        </div>
+        <div class="counter">
+          <span class="counter-value" id="count-queued">0</span>
+          <span class="counter-label">Queued</span>
+        </div>
+        <div class="counter">
+          <span class="counter-value" id="count-processed">0</span>
+          <span class="counter-label">Processed</span>
+        </div>
+        <div class="counter counter-success">
+          <span class="counter-value" id="count-requested">0</span>
+          <span class="counter-label">Requested</span>
+        </div>
+        <div class="counter counter-warn">
+          <span class="counter-value" id="count-already">0</span>
+          <span class="counter-label">Already Req.</span>
+        </div>
+        <div class="counter counter-info">
+          <span class="counter-value" id="count-too-early">0</span>
+          <span class="counter-label">Too Early</span>
+        </div>
+        <div class="counter counter-error">
+          <span class="counter-value" id="count-failed">0</span>
+          <span class="counter-label">Failed</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Section -->
+    <section id="error-section" class="section hidden">
+      <div class="error-bar">
+        <span id="error-text"></span>
+      </div>
+    </section>
+
+    <!-- Requested Orders List -->
+    <section id="orders-list-section" class="section hidden">
+      <div class="orders-list-header">
+        <span class="orders-list-title">Requested Reviews</span>
+      </div>
+      <div id="orders-list-empty" class="orders-list-empty hidden">No requested orders yet.</div>
+      <table id="orders-table" class="orders-table hidden">
+        <thead>
+          <tr>
+            <th class="th-num">#</th>
+            <th class="th-id">Order ID</th>
+            <th class="th-date">Requested</th>
+          </tr>
+        </thead>
+        <tbody id="orders-tbody"></tbody>
+      </table>
+      <div id="orders-pagination" class="orders-pagination hidden">
+        <button id="btn-prev-page" class="btn btn-small btn-muted" disabled>&laquo; Prev</button>
+        <span id="orders-page-info" class="page-info"></span>
+        <button id="btn-next-page" class="btn btn-small btn-muted">Next &raquo;</button>
+      </div>
+    </section>
+
+    <!-- Schedule Section -->
+    <section id="schedule-section" class="section hidden">
+      <div class="schedule-header">
+        <span class="schedule-title">Daily Schedule</span>
+        <label class="toggle">
+          <input type="checkbox" id="schedule-enabled">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="schedule-fields" class="schedule-fields hidden">
+        <div class="field-row">
+          <label for="schedule-time" class="field-label">Run at</label>
+          <input type="time" id="schedule-time" class="field-input" value="09:00">
+        </div>
+        <div class="field-row">
+          <label for="schedule-url" class="field-label">Orders page URL</label>
+          <input type="url" id="schedule-url" class="field-input" value="https://sellercentral.amazon.ca/orders-v3" placeholder="https://sellercentral.amazon.ca/orders-v3">
+        </div>
+        <button id="btn-save-schedule" class="btn btn-primary btn-small btn-full">Save schedule</button>
+        <p id="schedule-status" class="schedule-status hidden"></p>
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
