@@ -136,6 +136,39 @@ export function extractOrderIdFromPage() {
   return match ? match[0] : null;
 }
 
+export function scrapeProductDetails() {
+  const containers = document.querySelectorAll(
+    '[class*="ProductDetails-module__container"]',
+  );
+  const selection = window.getSelection()?.toString()?.trim() || "";
+
+  for (const container of containers) {
+    const text = container.innerText;
+    if (selection && !text.includes(selection)) continue;
+
+    const lines = text
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const data = { title: "", asin: "", sku: "", fnsku: "", condition: "" };
+
+    data.title = lines[0] || "";
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line === "ASIN" && lines[i + 1]) data.asin = lines[i + 1];
+      else if (line === "SKU" && lines[i + 1]) data.sku = lines[i + 1];
+      else if (line === "FNSKU" && lines[i + 1]) data.fnsku = lines[i + 1];
+      else if (line === "Condition" && lines[i + 1])
+        data.condition = lines[i + 1];
+    }
+
+    if (data.fnsku || data.asin) return data;
+  }
+
+  return null;
+}
+
 // --- Internal helpers ---
 
 function isManageOrdersPage(url, bodyText) {

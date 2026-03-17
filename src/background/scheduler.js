@@ -1,5 +1,5 @@
 import { getCurrentUser } from "../firebase/auth";
-import { log, RUN_STATUS } from "../shared/constants";
+import { DEFAULT_ORDERS_URL, log, RUN_STATUS } from "../shared/constants";
 
 export const SCHEDULER_ALARM_NAME = "sellerforge-daily-run";
 const STORAGE_KEY = "sellerforge-schedule";
@@ -8,7 +8,7 @@ const LAST_RUN_KEY = "sellerforge-last-run-date";
 const DEFAULT_SCHEDULE = {
   enabled: false,
   time: "09:00",
-  ordersUrl: "https://sellercentral.amazon.ca/orders-v3",
+  ordersUrl: DEFAULT_ORDERS_URL,
 };
 
 export function getSchedule() {

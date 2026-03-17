@@ -68,7 +68,12 @@ export const MSG = {
   // Orders list
   GET_REQUESTED_ORDERS: "GET_REQUESTED_ORDERS",
   REQUESTED_ORDERS_UPDATE: "REQUESTED_ORDERS_UPDATE",
+
+  // Context menu → Content script
+  SCRAPE_PRODUCT_DETAILS: "SCRAPE_PRODUCT_DETAILS",
 };
+
+export const DEFAULT_ORDERS_URL = "https://sellercentral.amazon.ca/orders-v3";
 
 export const TIMING = {
   PAGE_LOAD_WAIT_MS: 3000,

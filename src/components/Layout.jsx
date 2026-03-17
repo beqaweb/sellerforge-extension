@@ -13,7 +13,7 @@ import {
     Toolbar,
     Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
@@ -26,13 +26,27 @@ export default function Layout({ user, onSignOut }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [restored, setRestored] = useState(false);
+
+  // Restore last route on popup open
+  useEffect(() => {
+    chrome.storage.local.get("lastRoute", ({ lastRoute }) => {
+      if (lastRoute && lastRoute !== "/") navigate(lastRoute, { replace: true });
+      setRestored(true);
+    });
+  }, []);
+
+  // Persist route on every navigation
+  useEffect(() => {
+    if (restored) chrome.storage.local.set({ lastRoute: location.pathname });
+  }, [location.pathname, restored]);
 
   const currentNav = navItems.findIndex(
     (item) => item.path === location.pathname
   );
 
   return (
-    <Box sx={{ width: 380, minHeight: 500, display: "flex", flexDirection: "column" }}>
+    <Box sx={{ width: 380, height: 500, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <AppBar position="static" color="secondary" elevation={0}>
         <Toolbar variant="dense" sx={{ minHeight: 44 }}>
           <Typography variant="h6" sx={{ flexGrow: 1, fontSize: "0.95rem" }}>
@@ -84,7 +98,7 @@ export default function Layout({ user, onSignOut }) {
         value={currentNav === -1 ? 0 : currentNav}
         onChange={(_, newValue) => navigate(navItems[newValue].path)}
         showLabels
-        sx={{ borderTop: "1px solid", borderColor: "divider" }}
+        sx={{ flexShrink: 0, borderTop: "1px solid", borderColor: "divider" }}
       >
         {navItems.map((item) => (
           <BottomNavigationAction

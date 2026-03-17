@@ -22,6 +22,7 @@ import {
     Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import usePersistentState from "../hooks/usePersistentState";
 import { MSG, sendMessage } from "../utils/messaging";
 
 const STATUS_LABELS = {
@@ -48,7 +49,7 @@ export default function ReviewRequester() {
   const [runState, setRunState] = useState(null);
   const [error, setError] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = usePersistentState("reviews.page", 0);
 
   // Schedule state
   const [scheduleEnabled, setScheduleEnabled] = useState(false);

@@ -1,6 +1,7 @@
 import { getRawUser } from "../firebase/auth";
 import { getSkippableOrderIds, saveOrderState } from "../firebase/firestore";
 import {
+  DEFAULT_ORDERS_URL,
   MSG,
   ORDER_STATUS,
   PAGE_TYPE,
@@ -57,7 +58,7 @@ export class RunManager {
     }
   }
 
-  async startRun() {
+  async startRun(ordersUrl) {
     const user = getRawUser();
     if (!user) {
       this.state.error = "Not signed in";
@@ -76,37 +77,31 @@ export class RunManager {
     this.resetState();
     this.stopRequested = false;
 
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const tab = tabs[0];
-    if (!tab) {
-      this.state.error = "No active tab found";
-      this.broadcastState();
-      return;
-    }
+    const url = ordersUrl || DEFAULT_ORDERS_URL;
+    const tab = await chrome.tabs.create({ url, active: true });
     this.activeTabId = tab.id;
-    this.startUrl = tab.url;
 
     try {
       await this.runDiscovery();
       if (this.stopRequested) {
-        await this.navigateBack();
+        await this.closeTab();
         return;
       }
 
       await this.runProcessing();
-      await this.navigateBack();
+      await this.closeTab();
     } catch (err) {
       this.state.error = err.message;
       this.state.status = RUN_STATUS.STOPPED;
       this.broadcastState();
-      await this.navigateBack();
+      await this.closeTab();
     }
   }
 
-  async navigateBack() {
-    if (this.activeTabId && this.startUrl) {
+  async closeTab() {
+    if (this.activeTabId) {
       try {
-        await chrome.tabs.update(this.activeTabId, { url: this.startUrl });
+        await chrome.tabs.remove(this.activeTabId);
       } catch {
         // Tab may have been closed
       }

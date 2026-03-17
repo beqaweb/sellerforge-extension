@@ -56,5 +56,6 @@ module.exports = (env, argv) => {
       }),
     ],
     devtool: isProd ? false : "cheap-module-source-map",
+    performance: false,
   };
 };

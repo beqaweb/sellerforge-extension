@@ -1,22 +1,22 @@
 import DownloadIcon from "@mui/icons-material/Download";
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Paper,
-    TextField,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  TextField,
+  Typography,
 } from "@mui/material";
 import { useState } from "react";
+import usePersistentState from "../hooks/usePersistentState";
 
 const API_BASE = "https://localhost:8123";
 
 export default function LabelGenerator() {
-  const [asin, setAsin] = useState("");
-  const [fnsku, setFnsku] = useState("");
-  const [title, setTitle] = useState("");
-  const [condition, setCondition] = useState("New");
+  const [fnsku, setFnsku] = usePersistentState("label.fnsku", "");
+  const [title, setTitle] = usePersistentState("label.title", "");
+  const [condition, setCondition] = usePersistentState("label.condition", "New");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -26,18 +26,21 @@ export default function LabelGenerator() {
       setError("FNSKU is required");
       return;
     }
+    if (!title.trim()) {
+      setError("Product title is required");
+      return;
+    }
 
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const params = new URLSearchParams({ fnsku: fnsku.trim() });
-      if (asin.trim()) params.set("asin", asin.trim());
+      const params = new URLSearchParams({ code: fnsku.trim() });
       if (title.trim()) params.set("title", title.trim());
       if (condition.trim()) params.set("condition", condition.trim());
 
-      const res = await fetch(`${API_BASE}/api/labels/fnsku?${params}`);
+      const res = await fetch(`${API_BASE}/api/label?${params}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || `Server error (${res.status})`);
@@ -66,9 +69,18 @@ export default function LabelGenerator() {
         Generate clean, print-ready FNSKU labels for your FBA products.
       </Typography>
 
+      <Button
+        size="small"
+        fullWidth
+        onClick={() => { setFnsku(""); setTitle(""); setCondition("New"); setError(null); }}
+        sx={{ alignSelf: "flex-end" }}
+      >
+        Clear form
+      </Button>
+
       <Paper variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField
-          label="FNSKU"
+          label="FNSKU / ASIN"
           size="small"
           required
           placeholder="X00XXXXXXX"
@@ -76,14 +88,8 @@ export default function LabelGenerator() {
           onChange={(e) => setFnsku(e.target.value)}
         />
         <TextField
-          label="ASIN (optional)"
-          size="small"
-          placeholder="B0XXXXXXXXX"
-          value={asin}
-          onChange={(e) => setAsin(e.target.value)}
-        />
-        <TextField
-          label="Product Title (optional)"
+          label="Product Title"
+          required
           size="small"
           placeholder="Short product title for the label"
           value={title}

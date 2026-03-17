@@ -17,6 +17,54 @@ import { MSG, log } from "./shared/constants";
 // Initialize Firebase
 initFirebase();
 
+// --- Context menu ---
+chrome.contextMenus.create({
+  id: "generate-fnsku-label",
+  title: "Generate FNSKU label",
+  contexts: ["selection"],
+  documentUrlPatterns: [
+    "https://sellercentral.amazon.com/*",
+    "https://sellercentral.amazon.co.uk/*",
+    "https://sellercentral.amazon.de/*",
+    "https://sellercentral.amazon.ca/*",
+  ],
+});
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId !== "generate-fnsku-label") return;
+
+  const selectedText = (info.selectionText || "").trim();
+  log("Context menu clicked, selection:", selectedText);
+
+  // Ask content script to scrape product details from the DOM
+  let details = null;
+  try {
+    details = await chrome.tabs.sendMessage(tab.id, {
+      type: MSG.SCRAPE_PRODUCT_DETAILS,
+    });
+  } catch (err) {
+    log("Could not scrape product details:", err.message);
+  }
+
+  const code = details?.fnsku || details?.asin || selectedText;
+  const title = details?.title || "";
+  const condition = details?.condition || "New";
+
+  if (!code) {
+    log("No code found, skipping label generation");
+    return;
+  }
+
+  // Build API URL and open the inline PDF directly in a new tab
+  const params = new URLSearchParams({ code });
+  if (title) params.set("title", title);
+  if (condition) params.set("condition", condition);
+
+  const pdfUrl = `https://localhost:8123/api/label?${params}`;
+  log("Opening label PDF:", pdfUrl);
+  chrome.tabs.create({ url: pdfUrl });
+});
+
 // Single RunManager instance
 const runManager = new RunManager();
 

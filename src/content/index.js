@@ -7,6 +7,7 @@ import {
   extractOrderIdFromPage,
   extractOrders,
   goToNextPage,
+  scrapeProductDetails,
 } from "./dom";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -53,6 +54,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case MSG.EXTRACT_ORDER_ID:
       response = extractOrderIdFromPage();
       log("EXTRACT_ORDER_ID →", response);
+      sendResponse(response);
+      break;
+
+    case MSG.SCRAPE_PRODUCT_DETAILS:
+      response = scrapeProductDetails();
+      log("SCRAPE_PRODUCT_DETAILS →", response);
       sendResponse(response);
       break;
 
