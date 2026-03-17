@@ -15,7 +15,8 @@
     "https://sellercentral.amazon.com/*",
     "https://sellercentral.amazon.co.uk/*",
     "https://sellercentral.amazon.de/*",
-    "https://sellercentral.amazon.ca/*"
+    "https://sellercentral.amazon.ca/*",
+    "https://localhost:8123/*"
   ],
   "background": {
     "service_worker": "service-worker.js"
@@ -28,19 +29,12 @@
         "https://sellercentral.amazon.de/*",
         "https://sellercentral.amazon.ca/*"
       ],
-      "js": [
-        "shared/constants.js",
-        "content/page-detector.js",
-        "content/order-extractor.js",
-        "content/pagination-handler.js",
-        "content/review-requester.js",
-        "content/content-script.js"
-      ],
+      "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
   "action": {
-    "default_popup": "popup/popup.html",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
