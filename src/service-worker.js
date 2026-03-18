@@ -18,16 +18,30 @@ import { MSG, log } from "./shared/constants";
 initFirebase();
 
 // --- Context menu ---
-chrome.contextMenus.create({
-  id: "generate-fnsku-label",
-  title: "Generate FNSKU label",
-  contexts: ["selection"],
-  documentUrlPatterns: [
-    "https://sellercentral.amazon.com/*",
-    "https://sellercentral.amazon.co.uk/*",
-    "https://sellercentral.amazon.de/*",
-    "https://sellercentral.amazon.ca/*",
-  ],
+chrome.contextMenus.remove("generate-fnsku-label", () => {
+  // Only create after remove, and suppress error if not found
+  if (
+    chrome.runtime.lastError &&
+    chrome.runtime.lastError.message &&
+    !chrome.runtime.lastError.message.includes("Cannot find menu item")
+  ) {
+    // Log only unexpected errors
+    console.warn(
+      "Context menu remove error:",
+      chrome.runtime.lastError.message,
+    );
+  }
+  chrome.contextMenus.create({
+    id: "generate-fnsku-label",
+    title: "Generate FNSKU label",
+    contexts: ["selection"],
+    documentUrlPatterns: [
+      "https://sellercentral.amazon.com/*",
+      "https://sellercentral.amazon.co.uk/*",
+      "https://sellercentral.amazon.de/*",
+      "https://sellercentral.amazon.ca/*",
+    ],
+  });
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {

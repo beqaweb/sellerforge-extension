@@ -40,17 +40,38 @@ export async function restoreScheduleAlarm(runManager) {
     await createAlarm(schedule.time);
   }
 
-  const today = todayDateStr();
   const lastRun = await getLastRunDate();
-  if (lastRun !== today) {
-    const [h, m] = schedule.time.split(":").map(Number);
-    const scheduledMinutes = h * 60 + m;
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    if (nowMinutes >= scheduledMinutes && runManager) {
-      log("Overdue scheduled run detected — triggering now");
-      handleScheduledRun(runManager);
+  const now = new Date();
+  const [h, m] = schedule.time.split(":").map(Number);
+  const scheduled = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    h,
+    m,
+    0,
+    0,
+  );
+
+  let shouldRun = false;
+  if (!lastRun) {
+    // Never run before
+    shouldRun = now >= scheduled;
+  } else {
+    const lastRunDate = new Date(lastRun);
+    // If last run was before today or before scheduled time today, and now is after scheduled time
+    if (
+      (lastRunDate < scheduled && now >= scheduled) ||
+      lastRunDate.getFullYear() !== now.getFullYear() ||
+      lastRunDate.getMonth() !== now.getMonth() ||
+      lastRunDate.getDate() !== now.getDate()
+    ) {
+      shouldRun = now >= scheduled;
     }
+  }
+  if (shouldRun && runManager) {
+    log("Overdue scheduled run detected — triggering now");
+    handleScheduledRun(runManager);
   }
 }
 
@@ -78,14 +99,26 @@ export async function handleScheduledRun(runManager) {
     return;
   }
 
-  const today = todayDateStr();
+  // Check if already ran today (using local date)
   const lastRun = await getLastRunDate();
-  if (lastRun === today) {
-    log("Scheduled run skipped — already ran today (", today, ")");
-    return;
+  if (lastRun) {
+    const lastRunDate = new Date(lastRun);
+    const now = new Date();
+    if (
+      lastRunDate.getFullYear() === now.getFullYear() &&
+      lastRunDate.getMonth() === now.getMonth() &&
+      lastRunDate.getDate() === now.getDate()
+    ) {
+      log(
+        "Scheduled run skipped — already ran today (",
+        now.toDateString(),
+        ")",
+      );
+      return;
+    }
   }
 
-  await setLastRunDate(today);
+  await setLastRunDate(new Date().toISOString());
 
   try {
     const tab = await chrome.tabs.create({

@@ -1,25 +1,25 @@
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
 import {
-    Alert,
-    Box,
-    Button,
-    Chip,
-    Divider,
-    FormControlLabel,
-    LinearProgress,
-    Paper,
-    Stack,
-    Switch,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TextField,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  FormControlLabel,
+  LinearProgress,
+  Paper,
+  Stack,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
+  Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import usePersistentState from "../hooks/usePersistentState";
@@ -57,6 +57,7 @@ export default function ReviewRequester() {
   const [scheduleUrl, setScheduleUrl] = useState("");
   const [scheduleSaving, setScheduleSaving] = useState(false);
   const [scheduleMsg, setScheduleMsg] = useState(null);
+  const [lastRun, setLastRun] = useState(null);
 
   const refreshState = useCallback(async () => {
     const state = await sendMessage({ type: MSG.GET_STATE });
@@ -88,6 +89,10 @@ export default function ReviewRequester() {
       setScheduleTime(schedule.time || "09:00");
       setScheduleUrl(schedule.ordersUrl || "");
     }
+    // Fetch last run date from storage
+    chrome.storage.local.get("sellerforge-last-run-date", (result) => {
+      setLastRun(result["sellerforge-last-run-date"] || null);
+    });
   };
 
   const loadOrders = async () => {
@@ -277,6 +282,12 @@ export default function ReviewRequester() {
             </Typography>
           }
         />
+        {/* Last run date display */}
+        <Box sx={{ mt: 1, mb: scheduleEnabled ? 0 : 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            Last run: {lastRun ? formatLastRun(lastRun) : "Never"}
+          </Typography>
+        </Box>
         {scheduleEnabled && (
           <Stack spacing={1.5} sx={{ mt: 1 }}>
             <TextField
@@ -322,4 +333,18 @@ function formatDate(isoStr) {
     " " +
     d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
   );
+}
+
+function formatLastRun(dateStr) {
+  if (!dateStr) return "Never";
+  const d = new Date(dateStr);
+  if (!isNaN(d)) {
+    return (
+      d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) +
+      " " +
+      d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+    );
+  }
+  // fallback: show as is
+  return dateStr;
 }
