@@ -69,14 +69,20 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     return;
   }
 
-  // Build API URL and open the inline PDF directly in a new tab
+  // Build API URL and open the inline PDF directly in a new tab, next to the current tab
   const params = new URLSearchParams({ code });
   if (title) params.set("title", title);
   if (condition) params.set("condition", condition);
 
   const pdfUrl = `https://localhost:8123/api/label?${params}`;
   log("Opening label PDF:", pdfUrl);
-  chrome.tabs.create({ url: pdfUrl });
+
+  // Open beside the current tab if possible
+  chrome.tabs.create({
+    url: pdfUrl,
+    index: tab.index + 1,
+    openerTabId: tab.id,
+  });
 });
 
 // Single RunManager instance
