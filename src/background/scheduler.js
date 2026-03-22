@@ -70,8 +70,11 @@ export async function restoreScheduleAlarm(runManager) {
     }
   }
   if (shouldRun && runManager) {
-    log("Overdue scheduled run detected — triggering now");
-    handleScheduledRun(runManager);
+    log("Overdue scheduled run detected — waiting for user to be active");
+    waitForUserActive(() => {
+      log("User is active — triggering overdue run");
+      handleScheduledRun(runManager);
+    });
   }
 }
 
@@ -118,8 +121,6 @@ export async function handleScheduledRun(runManager) {
     }
   }
 
-  await setLastRunDate(new Date().toISOString());
-
   try {
     const tab = await chrome.tabs.create({
       url: schedule.ordersUrl,
@@ -131,6 +132,20 @@ export async function handleScheduledRun(runManager) {
 
     await runManager.startScheduledRun(tab.id, schedule.ordersUrl);
 
+    // Only record last run date if the run actually completed (not stopped/failed)
+    const finalState = runManager.getState();
+    if (finalState.status === RUN_STATUS.COMPLETED) {
+      await setLastRunDate(new Date().toISOString());
+      log("Scheduled run completed successfully");
+    } else {
+      log(
+        "Scheduled run ended with status:",
+        finalState.status,
+        "— not recording as last run",
+      );
+      await clearLastRunDate();
+    }
+
     try {
       await chrome.tabs.remove(tab.id);
       log("Closed scheduled tab");
@@ -139,6 +154,7 @@ export async function handleScheduledRun(runManager) {
     }
   } catch (err) {
     log("Scheduled run error:", err.message);
+    await clearLastRunDate();
   }
 }
 
@@ -197,4 +213,24 @@ function getLastRunDate() {
 
 function setLastRunDate(dateStr) {
   return chrome.storage.local.set({ [LAST_RUN_KEY]: dateStr });
+}
+
+function clearLastRunDate() {
+  return chrome.storage.local.remove(LAST_RUN_KEY);
+}
+
+function waitForUserActive(callback) {
+  chrome.idle.queryState(60, (state) => {
+    if (state === "active") {
+      callback();
+    } else {
+      const listener = (newState) => {
+        if (newState === "active") {
+          chrome.idle.onStateChanged.removeListener(listener);
+          callback();
+        }
+      };
+      chrome.idle.onStateChanged.addListener(listener);
+    }
+  });
 }

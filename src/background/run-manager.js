@@ -78,10 +78,14 @@ export class RunManager {
     this.stopRequested = false;
 
     const url = ordersUrl || DEFAULT_ORDERS_URL;
+    log("Opening tab:", url);
     const tab = await chrome.tabs.create({ url, active: true });
     this.activeTabId = tab.id;
 
     try {
+      await this.waitForTabLoad(tab.id);
+      await wait(TIMING.PAGE_LOAD_WAIT_MS);
+      log("Tab loaded, starting discovery");
       await this.runDiscovery();
       if (this.stopRequested) {
         await this.closeTab();
@@ -91,6 +95,7 @@ export class RunManager {
       await this.runProcessing();
       await this.closeTab();
     } catch (err) {
+      log("Run failed:", err.message, err);
       this.state.error = err.message;
       this.state.status = RUN_STATUS.STOPPED;
       this.broadcastState();
@@ -108,6 +113,25 @@ export class RunManager {
     }
   }
 
+  waitForTabLoad(tabId, timeoutMs = 30000) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        chrome.tabs.onUpdated.removeListener(listener);
+        reject(new Error("Tab load timed out"));
+      }, timeoutMs);
+
+      const listener = (updatedTabId, changeInfo) => {
+        if (updatedTabId === tabId && changeInfo.status === "complete") {
+          clearTimeout(timeout);
+          chrome.tabs.onUpdated.removeListener(listener);
+          resolve();
+        }
+      };
+
+      chrome.tabs.onUpdated.addListener(listener);
+    });
+  }
+
   // --- Phase 1: Discovery ---
 
   async runDiscovery() {
@@ -115,9 +139,13 @@ export class RunManager {
     this.broadcastState();
 
     let hasMorePages = true;
+    let firstPage = true;
 
     while (hasMorePages && !this.stopRequested) {
-      await wait(TIMING.PAGE_LOAD_WAIT_MS);
+      if (!firstPage) {
+        await wait(TIMING.PAGINATION_WAIT_MS);
+      }
+      firstPage = false;
 
       const pageType = await this.sendToTab(MSG.DETECT_PAGE);
       if (pageType !== PAGE_TYPE.MANAGE_ORDERS) {
@@ -137,10 +165,6 @@ export class RunManager {
 
       const paginationResult = await this.sendToTab(MSG.GO_NEXT_PAGE);
       hasMorePages = paginationResult && paginationResult.navigated;
-
-      if (hasMorePages) {
-        await wait(TIMING.PAGINATION_WAIT_MS);
-      }
     }
 
     if (this.stopRequested) return;
@@ -197,7 +221,8 @@ export class RunManager {
     log("Processing order:", order.orderId, order.detailsUrl);
 
     await chrome.tabs.update(this.activeTabId, { url: order.detailsUrl });
-    await wait(TIMING.PAGE_LOAD_WAIT_MS);
+    await this.waitForTabLoad(this.activeTabId);
+    await wait(1000);
 
     const pageType = await this.sendToTabWithRetry(MSG.DETECT_PAGE, 3);
     log("Page type:", pageType);
@@ -382,10 +407,14 @@ export class RunManager {
     this.startUrl = ordersUrl;
 
     try {
+      await this.waitForTabLoad(tabId);
+      await wait(TIMING.PAGE_LOAD_WAIT_MS);
+      log("Scheduled tab loaded, starting discovery");
       await this.runDiscovery();
       if (this.stopRequested) return;
       await this.runProcessing();
     } catch (err) {
+      log("Scheduled run failed:", err.message, err);
       this.state.error = err.message;
       this.state.status = RUN_STATUS.STOPPED;
       this.broadcastState();

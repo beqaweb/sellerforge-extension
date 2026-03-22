@@ -10,7 +10,8 @@
     "tabs",
     "storage",
     "alarms",
-    "contextMenus"
+    "contextMenus",
+    "idle"
   ],
   "host_permissions": [
     "https://sellercentral.amazon.com/*",
