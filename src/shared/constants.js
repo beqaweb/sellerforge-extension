@@ -71,6 +71,9 @@ export const MSG = {
 
   // Context menu → Content script
   SCRAPE_PRODUCT_DETAILS: "SCRAPE_PRODUCT_DETAILS",
+  GET_CLICKED_ASIN: "GET_CLICKED_ASIN",
+  SHOW_ASIN_INFO: "SHOW_ASIN_INFO",
+  SHOW_ASIN_INFO_LOADING: "SHOW_ASIN_INFO_LOADING",
 };
 
 export const DEFAULT_ORDERS_URL = "https://sellercentral.amazon.ca/orders-v3";

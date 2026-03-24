@@ -18,36 +18,48 @@ import { MSG, log } from "./shared/constants";
 // Initialize Firebase
 initFirebase();
 
-// --- Context menu ---
-chrome.contextMenus.remove("generate-fnsku-label", () => {
-  // Only create after remove, and suppress error if not found
-  if (
-    chrome.runtime.lastError &&
-    chrome.runtime.lastError.message &&
-    !chrome.runtime.lastError.message.includes("Cannot find menu item")
-  ) {
-    // Log only unexpected errors
-    console.warn(
-      "Context menu remove error:",
-      chrome.runtime.lastError.message,
-    );
-  }
-  chrome.contextMenus.create({
-    id: "generate-fnsku-label",
-    title: "Generate FNSKU label",
-    contexts: ["selection"],
-    documentUrlPatterns: [
-      "https://sellercentral.amazon.com/*",
-      "https://sellercentral.amazon.co.uk/*",
-      "https://sellercentral.amazon.de/*",
-      "https://sellercentral.amazon.ca/*",
-    ],
+// --- Context menus ---
+const SELLER_CENTRAL_PATTERNS = [
+  "https://sellercentral.amazon.com/*",
+  "https://sellercentral.amazon.co.uk/*",
+  "https://sellercentral.amazon.de/*",
+  "https://sellercentral.amazon.ca/*",
+];
+
+function createContextMenu(id, title, contexts = ["selection"]) {
+  chrome.contextMenus.remove(id, () => {
+    if (
+      chrome.runtime.lastError &&
+      chrome.runtime.lastError.message &&
+      !chrome.runtime.lastError.message.includes("Cannot find menu item")
+    ) {
+      console.warn(
+        "Context menu remove error:",
+        chrome.runtime.lastError.message,
+      );
+    }
+    chrome.contextMenus.create({
+      id,
+      title,
+      contexts,
+      documentUrlPatterns: SELLER_CENTRAL_PATTERNS,
+    });
   });
-});
+}
+
+createContextMenu("generate-fnsku-label", "Generate FNSKU label");
+createContextMenu("asin-info", "ASIN info", ["selection", "page"]);
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId !== "generate-fnsku-label") return;
+  if (info.menuItemId === "generate-fnsku-label") {
+    return handleGenerateLabel(info, tab);
+  }
+  if (info.menuItemId === "asin-info") {
+    return handleAsinInfo(info, tab);
+  }
+});
 
+async function handleGenerateLabel(info, tab) {
   const selectedText = (info.selectionText || "").trim();
   log("Context menu clicked, selection:", selectedText);
 
@@ -84,7 +96,59 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     index: tab.index + 1,
     openerTabId: tab.id,
   });
-});
+}
+
+async function handleAsinInfo(info, tab) {
+  let asin = (info.selectionText || "").trim();
+  let fontFamily = null;
+
+  // Always ask content script for the right-clicked element context
+  try {
+    const result = await chrome.tabs.sendMessage(tab.id, {
+      type: MSG.GET_CLICKED_ASIN,
+    });
+    fontFamily = result?.fontFamily || null;
+    if (!asin) asin = result?.asin || "";
+  } catch (err) {
+    log("Could not get clicked element info:", err.message);
+  }
+
+  if (!asin) {
+    log("No ASIN found, skipping");
+    return;
+  }
+
+  log("ASIN info lookup:", asin);
+
+  // Show loading overlay immediately
+  chrome.tabs.sendMessage(tab.id, {
+    type: MSG.SHOW_ASIN_INFO_LOADING,
+    fontFamily,
+  });
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/product/${encodeURIComponent(asin)}`,
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `Server error (${res.status})`);
+    }
+    const product = await res.json();
+    chrome.tabs.sendMessage(tab.id, {
+      type: MSG.SHOW_ASIN_INFO,
+      product,
+      fontFamily,
+    });
+  } catch (err) {
+    log("ASIN info error:", err.message);
+    chrome.tabs.sendMessage(tab.id, {
+      type: MSG.SHOW_ASIN_INFO,
+      error: err.message,
+      fontFamily,
+    });
+  }
+}
 
 // Single RunManager instance
 const runManager = new RunManager();
