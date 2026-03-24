@@ -75,11 +75,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(response);
       break;
 
-    case MSG.SCRAPE_PRODUCT_DETAILS:
-      response = scrapeProductDetails();
+    case MSG.SCRAPE_PRODUCT_DETAILS: {
+      const clickedText = (
+        lastRightClickedEl?.innerText ||
+        lastRightClickedEl?.textContent ||
+        ""
+      ).trim();
+      response = scrapeProductDetails(clickedText);
       log("SCRAPE_PRODUCT_DETAILS →", response);
       sendResponse(response);
       break;
+    }
 
     case MSG.GET_CLICKED_ASIN:
       response = getAsinFromClickedElement();

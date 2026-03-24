@@ -136,15 +136,16 @@ export function extractOrderIdFromPage() {
   return match ? match[0] : null;
 }
 
-export function scrapeProductDetails() {
+export function scrapeProductDetails(hintText = "") {
   const containers = document.querySelectorAll(
     '[class*="ProductDetails-module__container"]',
   );
   const selection = window.getSelection()?.toString()?.trim() || "";
+  const matchText = selection || hintText;
 
   for (const container of containers) {
     const text = container.innerText;
-    if (selection && !text.includes(selection)) continue;
+    if (matchText && !text.includes(matchText)) continue;
 
     const lines = text
       .split("\n")

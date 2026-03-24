@@ -47,7 +47,10 @@ function createContextMenu(id, title, contexts = ["selection"]) {
   });
 }
 
-createContextMenu("generate-fnsku-label", "Generate FNSKU label");
+createContextMenu("generate-fnsku-label", "Generate FNSKU label", [
+  "selection",
+  "page",
+]);
 createContextMenu("asin-info", "ASIN info", ["selection", "page"]);
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -99,22 +102,57 @@ async function handleGenerateLabel(info, tab) {
 }
 
 async function handleAsinInfo(info, tab) {
-  let asin = (info.selectionText || "").trim();
+  let asin = null;
   let fontFamily = null;
 
-  // Always ask content script for the right-clicked element context
+  // Always ask content script for the right-clicked element context (for fontFamily)
   try {
     const result = await chrome.tabs.sendMessage(tab.id, {
       type: MSG.GET_CLICKED_ASIN,
     });
     fontFamily = result?.fontFamily || null;
-    if (!asin) asin = result?.asin || "";
   } catch (err) {
     log("Could not get clicked element info:", err.message);
   }
 
+  // 1) Try scraping product details from the DOM (same approach as label generator)
+  try {
+    const details = await chrome.tabs.sendMessage(tab.id, {
+      type: MSG.SCRAPE_PRODUCT_DETAILS,
+    });
+    if (details?.asin) asin = details.asin;
+  } catch (err) {
+    log("Could not scrape product details:", err.message);
+  }
+
+  // 2) Fall back to selected text or right-clicked element
+  if (!asin) {
+    asin = (info.selectionText || "").trim();
+  }
+  if (!asin) {
+    try {
+      const result = await chrome.tabs.sendMessage(tab.id, {
+        type: MSG.GET_CLICKED_ASIN,
+      });
+      asin = result?.asin || "";
+    } catch (err) {
+      log("Could not get clicked ASIN:", err.message);
+    }
+  }
+
   if (!asin) {
     log("No ASIN found, skipping");
+    return;
+  }
+
+  // Validate ASIN format (starts with B0, 10 alphanumeric characters)
+  if (!/^B0[A-Z0-9]{8}$/i.test(asin)) {
+    log("Invalid ASIN format:", asin);
+    chrome.tabs.sendMessage(tab.id, {
+      type: MSG.SHOW_ASIN_INFO,
+      error: `"${asin}" is not a valid ASIN`,
+      fontFamily,
+    });
     return;
   }
 
