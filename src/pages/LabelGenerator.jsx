@@ -10,8 +10,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import usePersistentState from "../hooks/usePersistentState";
-
-const API_BASE = "https://localhost:8123";
+import { apiFetch } from "../shared/api";
 
 export default function LabelGenerator() {
   const [fnsku, setFnsku] = usePersistentState("label.fnsku", "");
@@ -40,11 +39,7 @@ export default function LabelGenerator() {
       if (title.trim()) params.set("title", title.trim());
       if (condition.trim()) params.set("condition", condition.trim());
 
-      const res = await fetch(`${API_BASE}/api/label?${params}`);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail || `Server error (${res.status})`);
-      }
+      const res = await apiFetch(`/api/label?${params}`);
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

@@ -19,7 +19,7 @@
     "https://sellercentral.amazon.co.uk/*",
     "https://sellercentral.amazon.de/*",
     "https://sellercentral.amazon.ca/*",
-    "https://localhost:8123/*"
+    "https://amz-tools.shekmachine.duckdns.org/*"
   ],
   "background": {
     "service_worker": "service-worker.js"

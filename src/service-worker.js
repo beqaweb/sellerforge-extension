@@ -12,6 +12,7 @@ import {
   stopWatchingOrders,
   watchRequestedOrders,
 } from "./firebase/firestore";
+import { API_BASE } from "./shared/api";
 import { MSG, log } from "./shared/constants";
 
 // Initialize Firebase
@@ -74,7 +75,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (title) params.set("title", title);
   if (condition) params.set("condition", condition);
 
-  const pdfUrl = `https://localhost:8123/api/label?${params}`;
+  const pdfUrl = `${API_BASE}/api/label?${params}`;
   log("Opening label PDF:", pdfUrl);
 
   // Open beside the current tab if possible
