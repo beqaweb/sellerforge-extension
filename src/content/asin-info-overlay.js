@@ -1,10 +1,7 @@
 let currentHost = null;
 let currentShadow = null;
-let currentFontFamily = null;
 
 export function showAsinInfoOverlay(data) {
-  if (data.fontFamily) currentFontFamily = data.fontFamily;
-
   if (data.loading) {
     showLoading();
     return;
@@ -48,18 +45,16 @@ function showProduct(product) {
       ${row("UPC", product.upc)}
       ${row("EAN", product.ean)}
       ${row("MPN", product.mpn)}
-      ${row("Domain", product.domain)}
-      ${product.image ? row("Image URL", product.image) : ""}
     </table>
   `;
 
   wireClose(dlg);
 
-  shadow.querySelectorAll(".copy-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      navigator.clipboard.writeText(btn.dataset.value).then(() => {
-        btn.textContent = "Copied!";
-        setTimeout(() => (btn.textContent = "Copy"), 1200);
+  shadow.querySelectorAll("tr[data-value]").forEach((tr) => {
+    tr.addEventListener("click", () => {
+      navigator.clipboard.writeText(tr.dataset.value).then(() => {
+        tr.classList.add("copied");
+        setTimeout(() => tr.classList.remove("copied"), 1200);
       });
     });
   });
@@ -121,17 +116,15 @@ function removeOverlay() {
     currentHost.remove();
     currentHost = null;
     currentShadow = null;
-    currentFontFamily = null;
   }
 }
 
 function row(label, value) {
   if (!value) return "";
   return `
-    <tr>
+    <tr data-value="${escapeAttr(value)}">
       <th>${escapeHtml(label)}</th>
       <td>${escapeHtml(value)}</td>
-      <td><button class="copy-btn" data-value="${escapeAttr(value)}">Copy</button></td>
     </tr>
   `;
 }
@@ -151,23 +144,24 @@ function escapeAttr(str) {
     .replace(/>/g, "&gt;");
 }
 
+const FONT_FAMILY =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
 function getStyles() {
-  const font = currentFontFamily
-    ? `font-family: ${currentFontFamily};`
-    : "font: inherit;";
   return `
-    :host { ${font} }
-    dialog { ${font} border: none; border-radius: 10px; padding: 20px; max-width: 440px; width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.25); outline: none; }
+    :host { font-family: ${FONT_FAMILY}; font-size: 14px; }
+    dialog { font: inherit; border: none; border-radius: 10px; padding: 20px; max-width: 440px; width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.25); outline: none; }
     dialog::backdrop { background: rgba(0,0,0,0.4); }
     .close-btn { position: absolute; top: 6px; right: 10px; background: none; border: none; font-size: 1.4em; cursor: pointer; color: #666; }
     .close-btn:hover { color: #000; }
-    .header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; padding-right: 24px; line-height: 1.4; }
-    .thumb { width: 80px; height: 80px; object-fit: contain; border-radius: 6px; border: 1px solid #e0e0e0; background: #fafafa; }
+    .header { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; padding-right: 24px; line-height: 1.4; }
+    .thumb { width: 80px; height: 80px; flex-shrink: 0; object-fit: contain; border-radius: 6px; border: 1px solid #e0e0e0; background: #fafafa; }
     table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; font-size: 0.8em; text-transform: uppercase; color: #888; padding: 5px 8px; white-space: nowrap; }
-    td { padding: 5px 8px; user-select: all; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    tr:hover { background: #f5f5f5; }
-    .copy-btn { font: inherit; font-size: 0.85em; padding: 2px 8px; cursor: pointer; }
+    th { text-align: left; font-size: 0.9em; text-transform: uppercase; color: #888; padding: 5px 8px; white-space: nowrap; }
+    td { padding: 5px 8px; user-select: all; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; }
+    tr[data-value] { cursor: pointer; }
+    tr[data-value]:hover { background: #f5f5f5; }
+    tr.copied td:last-child::after { content: '✓ Copied'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #4caf50; font-size: 0.8em; }
     .loading { text-align: center; padding: 24px; color: #666; }
   `;
 }

@@ -22,10 +22,9 @@ document.addEventListener("contextmenu", (e) => {
 function getAsinFromClickedElement() {
   if (!lastRightClickedEl) return null;
   const el = lastRightClickedEl;
-  const fontFamily = getComputedStyle(el).fontFamily;
   const text = (el.innerText || el.textContent || "").trim();
   const match = text.match(ASIN_REGEX);
-  return match ? { asin: match[0], fontFamily } : null;
+  return match ? { asin: match[0] } : null;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

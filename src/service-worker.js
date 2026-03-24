@@ -103,17 +103,6 @@ async function handleGenerateLabel(info, tab) {
 
 async function handleAsinInfo(info, tab) {
   let asin = null;
-  let fontFamily = null;
-
-  // Always ask content script for the right-clicked element context (for fontFamily)
-  try {
-    const result = await chrome.tabs.sendMessage(tab.id, {
-      type: MSG.GET_CLICKED_ASIN,
-    });
-    fontFamily = result?.fontFamily || null;
-  } catch (err) {
-    log("Could not get clicked element info:", err.message);
-  }
 
   // 1) Try scraping product details from the DOM (same approach as label generator)
   try {
@@ -151,7 +140,6 @@ async function handleAsinInfo(info, tab) {
     chrome.tabs.sendMessage(tab.id, {
       type: MSG.SHOW_ASIN_INFO,
       error: `"${asin}" is not a valid ASIN`,
-      fontFamily,
     });
     return;
   }
@@ -159,10 +147,7 @@ async function handleAsinInfo(info, tab) {
   log("ASIN info lookup:", asin);
 
   // Show loading overlay immediately
-  chrome.tabs.sendMessage(tab.id, {
-    type: MSG.SHOW_ASIN_INFO_LOADING,
-    fontFamily,
-  });
+  chrome.tabs.sendMessage(tab.id, { type: MSG.SHOW_ASIN_INFO_LOADING });
 
   try {
     const res = await fetch(
@@ -176,14 +161,12 @@ async function handleAsinInfo(info, tab) {
     chrome.tabs.sendMessage(tab.id, {
       type: MSG.SHOW_ASIN_INFO,
       product,
-      fontFamily,
     });
   } catch (err) {
     log("ASIN info error:", err.message);
     chrome.tabs.sendMessage(tab.id, {
       type: MSG.SHOW_ASIN_INFO,
       error: err.message,
-      fontFamily,
     });
   }
 }
