@@ -19,12 +19,6 @@ import { MSG, log } from "./shared/constants";
 initFirebase();
 
 // --- Context menus ---
-const SELLER_CENTRAL_PATTERNS = [
-  "https://sellercentral.amazon.com/*",
-  "https://sellercentral.amazon.co.uk/*",
-  "https://sellercentral.amazon.de/*",
-  "https://sellercentral.amazon.ca/*",
-];
 
 function createContextMenu(id, title, contexts = ["selection"]) {
   chrome.contextMenus.remove(id, () => {
@@ -42,7 +36,6 @@ function createContextMenu(id, title, contexts = ["selection"]) {
       id,
       title,
       contexts,
-      documentUrlPatterns: SELLER_CENTRAL_PATTERNS,
     });
   });
 }
@@ -52,6 +45,22 @@ createContextMenu("generate-fnsku-label", "Generate FNSKU label", [
   "page",
 ]);
 createContextMenu("asin-info", "ASIN info", ["selection", "page"]);
+
+// Ensure the content script is injected in the given frame (needed for non-Seller Central pages)
+async function ensureContentScript(tabId, frameId = 0) {
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: MSG.PING }, { frameId });
+  } catch {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId, frameIds: [frameId] },
+        files: ["content.js"],
+      });
+    } catch (err) {
+      log("Cannot inject content script into frame", frameId, ":", err.message);
+    }
+  }
+}
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "generate-fnsku-label") {
@@ -66,12 +75,19 @@ async function handleGenerateLabel(info, tab) {
   const selectedText = (info.selectionText || "").trim();
   log("Context menu clicked, selection:", selectedText);
 
-  // Ask content script to scrape product details from the DOM
+  // Ensure content script is available in the right-clicked frame
+  await ensureContentScript(tab.id, info.frameId);
+
+  // Ask content script to scrape product details from the DOM (in the frame that was right-clicked)
   let details = null;
   try {
-    details = await chrome.tabs.sendMessage(tab.id, {
-      type: MSG.SCRAPE_PRODUCT_DETAILS,
-    });
+    details = await chrome.tabs.sendMessage(
+      tab.id,
+      {
+        type: MSG.SCRAPE_PRODUCT_DETAILS,
+      },
+      { frameId: info.frameId },
+    );
   } catch (err) {
     log("Could not scrape product details:", err.message);
   }
@@ -104,25 +120,37 @@ async function handleGenerateLabel(info, tab) {
 async function handleAsinInfo(info, tab) {
   let asin = null;
 
-  // 1) Try scraping product details from the DOM (same approach as label generator)
+  // Ensure content script is available in both the right-clicked frame and the top frame
+  await ensureContentScript(tab.id, info.frameId);
+  if (info.frameId !== 0) await ensureContentScript(tab.id, 0);
+
+  // 1) Try scraping product details from the DOM (in the frame that was right-clicked)
   try {
-    const details = await chrome.tabs.sendMessage(tab.id, {
-      type: MSG.SCRAPE_PRODUCT_DETAILS,
-    });
+    const details = await chrome.tabs.sendMessage(
+      tab.id,
+      {
+        type: MSG.SCRAPE_PRODUCT_DETAILS,
+      },
+      { frameId: info.frameId },
+    );
     if (details?.asin) asin = details.asin;
   } catch (err) {
     log("Could not scrape product details:", err.message);
   }
 
-  // 2) Fall back to selected text or right-clicked element
+  // 2) Fall back to selected text or right-clicked element (in the correct frame)
   if (!asin) {
     asin = (info.selectionText || "").trim();
   }
   if (!asin) {
     try {
-      const result = await chrome.tabs.sendMessage(tab.id, {
-        type: MSG.GET_CLICKED_ASIN,
-      });
+      const result = await chrome.tabs.sendMessage(
+        tab.id,
+        {
+          type: MSG.GET_CLICKED_ASIN,
+        },
+        { frameId: info.frameId },
+      );
       asin = result?.asin || "";
     } catch (err) {
       log("Could not get clicked ASIN:", err.message);
@@ -137,17 +165,25 @@ async function handleAsinInfo(info, tab) {
   // Validate ASIN format (starts with B0, 10 alphanumeric characters)
   if (!/^B0[A-Z0-9]{8}$/i.test(asin)) {
     log("Invalid ASIN format:", asin);
-    chrome.tabs.sendMessage(tab.id, {
-      type: MSG.SHOW_ASIN_INFO,
-      error: `"${asin}" is not a valid ASIN`,
-    });
+    chrome.tabs.sendMessage(
+      tab.id,
+      {
+        type: MSG.SHOW_ASIN_INFO,
+        error: `"${asin}" is not a valid ASIN`,
+      },
+      { frameId: 0 },
+    );
     return;
   }
 
   log("ASIN info lookup:", asin);
 
-  // Show loading overlay immediately
-  chrome.tabs.sendMessage(tab.id, { type: MSG.SHOW_ASIN_INFO_LOADING });
+  // Show loading overlay in the top frame
+  chrome.tabs.sendMessage(
+    tab.id,
+    { type: MSG.SHOW_ASIN_INFO_LOADING },
+    { frameId: 0 },
+  );
 
   try {
     const res = await fetch(
@@ -158,16 +194,24 @@ async function handleAsinInfo(info, tab) {
       throw new Error(body.detail || `Server error (${res.status})`);
     }
     const product = await res.json();
-    chrome.tabs.sendMessage(tab.id, {
-      type: MSG.SHOW_ASIN_INFO,
-      product,
-    });
+    chrome.tabs.sendMessage(
+      tab.id,
+      {
+        type: MSG.SHOW_ASIN_INFO,
+        product,
+      },
+      { frameId: 0 },
+    );
   } catch (err) {
     log("ASIN info error:", err.message);
-    chrome.tabs.sendMessage(tab.id, {
-      type: MSG.SHOW_ASIN_INFO,
-      error: err.message,
-    });
+    chrome.tabs.sendMessage(
+      tab.id,
+      {
+        type: MSG.SHOW_ASIN_INFO,
+        error: err.message,
+      },
+      { frameId: 0 },
+    );
   }
 }
 

@@ -32,6 +32,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   let response;
 
   switch (type) {
+    case MSG.PING:
+      sendResponse({ pong: true });
+      break;
+
     case MSG.DETECT_PAGE:
       response = detectPageType();
       log("DETECT_PAGE →", response);
