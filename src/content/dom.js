@@ -85,7 +85,7 @@ export function goToNextPage() {
   const nextButton = findNextButton();
 
   if (nextButton && !isDisabled(nextButton)) {
-    nextButton.click();
+    simulateRealClick(nextButton);
     return { navigated: true, hasNextPage: true };
   }
 
@@ -106,7 +106,7 @@ export function clickRequestReview() {
   }
 
   try {
-    button.click();
+    simulateRealClick(button);
     return { clicked: true };
   } catch (err) {
     return { clicked: false, error: "Click failed: " + err.message };
@@ -114,16 +114,17 @@ export function clickRequestReview() {
 }
 
 export function clickConfirmYes() {
-  const button = document.querySelector(
+  const katButton = document.querySelector(
     '#ayb-app .ayb-reviews-button-container kat-button[label="Yes"]',
   );
 
-  if (!button) {
+  if (!katButton) {
     return { clicked: false, error: "Yes button not found" };
   }
 
   try {
-    button.click();
+    const target = katButton.shadowRoot?.querySelector("button") || katButton;
+    simulateRealClick(target);
     return { clicked: true };
   } catch (err) {
     return { clicked: false, error: "Click failed: " + err.message };
@@ -248,4 +249,13 @@ function isDisabled(element) {
   if (styles.pointerEvents === "none" && parseFloat(styles.opacity) < 0.5)
     return true;
   return false;
+}
+
+function simulateRealClick(element) {
+  const opts = { bubbles: true, cancelable: true, composed: true };
+  element.dispatchEvent(new PointerEvent("pointerdown", opts));
+  element.dispatchEvent(new MouseEvent("mousedown", opts));
+  element.dispatchEvent(new PointerEvent("pointerup", opts));
+  element.dispatchEvent(new MouseEvent("mouseup", opts));
+  element.dispatchEvent(new MouseEvent("click", opts));
 }

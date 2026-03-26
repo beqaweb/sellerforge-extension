@@ -84,6 +84,7 @@ export class RunManager {
 
     try {
       await this.waitForTabLoad(tab.id);
+      await this.setOrdersPagePreferences(tab.id);
       await wait(TIMING.PAGE_LOAD_WAIT_MS);
       log("Tab loaded, starting discovery");
       await this.runDiscovery();
@@ -130,6 +131,24 @@ export class RunManager {
 
       chrome.tabs.onUpdated.addListener(listener);
     });
+  }
+
+  async setOrdersPagePreferences(tabId) {
+    log("Setting orders page localStorage preferences");
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        localStorage.setItem("MYO-NUMBER-RESULTS-PER-PAGE-PREFERENCE", "100");
+        localStorage.setItem(
+          "MYO-SAVED-NUMBER-RESULTS-PER-PAGE-PREFERENCE",
+          "100",
+        );
+      },
+    });
+    log("Reloading tab to apply preferences");
+    const loaded = this.waitForTabLoad(tabId);
+    await chrome.tabs.reload(tabId);
+    await loaded;
   }
 
   // --- Phase 1: Discovery ---
@@ -361,10 +380,11 @@ export class RunManager {
   async sendToTab(type, data) {
     if (!this.activeTabId) throw new Error("No active tab");
     try {
-      return await chrome.tabs.sendMessage(this.activeTabId, {
-        type,
-        ...data,
-      });
+      return await chrome.tabs.sendMessage(
+        this.activeTabId,
+        { type, ...data },
+        { frameId: 0 },
+      );
     } catch (err) {
       throw new Error("Content script communication failed: " + err.message);
     }
@@ -408,6 +428,7 @@ export class RunManager {
 
     try {
       await this.waitForTabLoad(tabId);
+      await this.setOrdersPagePreferences(tabId);
       await wait(TIMING.PAGE_LOAD_WAIT_MS);
       log("Scheduled tab loaded, starting discovery");
       await this.runDiscovery();

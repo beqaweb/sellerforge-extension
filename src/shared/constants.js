@@ -77,7 +77,8 @@ export const MSG = {
   SHOW_ASIN_INFO_LOADING: "SHOW_ASIN_INFO_LOADING",
 };
 
-export const DEFAULT_ORDERS_URL = "https://sellercentral.amazon.ca/orders-v3";
+export const DEFAULT_ORDERS_URL =
+  "https://sellercentral.amazon.ca/orders-v3?date-range=last-14&sort=order_date_asc";
 
 export const TIMING = {
   PAGE_LOAD_WAIT_MS: 3000,
