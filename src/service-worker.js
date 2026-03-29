@@ -249,6 +249,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleRemoveSupplier(message.asin, message.supplierId, sendResponse);
       return true;
 
+    case MSG.PARSE_SUPPLIER:
+      handleParseSupplier(message.url, sendResponse);
+      return true;
+
     case MSG.GENERATE_LABEL:
       handleGenerateLabel(message, sender);
       sendResponse({ ok: true });
@@ -316,6 +320,22 @@ async function handleRemoveSupplier(asin, supplierId, sendResponse) {
     sendResponse({ ok: true });
   } catch (err) {
     sendResponse({ ok: false, error: err.message });
+  }
+}
+
+async function handleParseSupplier(url, sendResponse) {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/supplier/parse?url=${encodeURIComponent(url)}`,
+    );
+    if (!res.ok) {
+      sendResponse({ ok: true, data: null });
+      return;
+    }
+    const data = await res.json();
+    sendResponse({ ok: true, data });
+  } catch {
+    sendResponse({ ok: true, data: null });
   }
 }
 

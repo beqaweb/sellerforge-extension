@@ -227,11 +227,13 @@ function supplierItem(supplier) {
     ? `<img class="supplier-icon" src="${escapeAttr(supplier.icon)}" alt="" />`
     : `<span class="supplier-icon-placeholder">\uD83C\uDF10</span>`;
   return `
-    <a class="supplier-item" data-id="${escapeAttr(supplier.id)}" href="${escapeAttr(supplier.url)}" target="_blank" rel="noopener">
-      ${iconHtml}
-      <span class="supplier-link">${escapeHtml(title)}</span>
-      <button class="supplier-remove" title="Remove">&times;</button>
-    </a>
+    <div class="supplier-item" data-id="${escapeAttr(supplier.id)}" data-url="${escapeAttr(supplier.url)}">
+      <a class="supplier-row" href="${escapeAttr(supplier.url)}" target="_blank" rel="noopener">
+        ${iconHtml}
+        <span class="supplier-link">${escapeHtml(title)}</span>
+        <button class="supplier-remove" title="Remove">&times;</button>
+      </a>
+    </div>
   `;
 }
 
@@ -270,6 +272,7 @@ function wireSuppliers(shadow) {
       const el = wrapper.firstElementChild;
       list.prepend(el);
       wireRemoveBtn(el, list, errorEl);
+      fetchSupplierData(el);
       input.value = "";
     } catch (err) {
       errorEl.textContent = err.message || "Failed to add supplier";
@@ -292,6 +295,7 @@ function wireSuppliers(shadow) {
 
   list.querySelectorAll(".supplier-item").forEach((el) => {
     wireRemoveBtn(el, list, errorEl);
+    fetchSupplierData(el);
   });
 }
 
@@ -300,6 +304,7 @@ function wireRemoveBtn(el, list, errorEl) {
   removeBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!confirm("Remove this supplier?")) return;
     const id = el.dataset.id;
     const asin = el.closest(".suppliers-section").dataset.asin;
     try {
@@ -315,6 +320,48 @@ function wireRemoveBtn(el, list, errorEl) {
       errorEl.style.display = "block";
     }
   });
+}
+
+async function fetchSupplierData(el) {
+  const url = el.dataset.url;
+  if (!url) return;
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: MSG.PARSE_SUPPLIER,
+      url,
+    });
+    if (!response.ok || !response.data) return;
+    const d = response.data;
+    const stockHtml = (d.stock || [])
+      .map(
+        (s) =>
+          `<span class="sp-stock-item${parseInt(s.stock, 10) > 0 ? " in-stock" : " no-stock"}">${escapeHtml(s.location)}: <strong>${escapeHtml(s.stock)}</strong>${s.shipping_eta ? ` (${escapeHtml(s.shipping_eta)})` : ""}</span>`,
+      )
+      .join("");
+    if (!d.price && !stockHtml) return;
+    const container = document.createElement("div");
+    container.className = "supplier-parsed";
+    container.innerHTML = `
+        ${d.price ? `<span class="sp-price" title="Click to copy">${escapeHtml(d.price)}</span>` : ""}
+        ${stockHtml ? `<div class="sp-stock">${stockHtml}</div>` : ""}
+    `;
+    el.appendChild(container);
+    const priceEl = container.querySelector(".sp-price");
+    if (priceEl) {
+      priceEl.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard
+          .writeText(priceEl.textContent.replace(/[^0-9.]/g, ""))
+          .then(() => {
+            priceEl.classList.add("copied");
+            setTimeout(() => priceEl.classList.remove("copied"), 1200);
+          });
+      });
+    }
+  } catch {
+    // silently ignore
+  }
 }
 
 const FONT_FAMILY =
@@ -364,13 +411,24 @@ function getStyles() {
     .supplier-add-btn:hover { background: ${primaryHover}; }
     .supplier-add-btn:disabled { background: ${primaryDisabled}; cursor: not-allowed; }
     .supplier-error { color: ${error}; font-size: 0.85em; margin-bottom: 6px; }
-    .supplier-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
-    .supplier-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: inherit; }
+    .supplier-list { display: flex; flex-direction: column; gap: 4px; max-height: 350px; overflow-y: auto; }
+    .supplier-item { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 6px; }
     .supplier-item:hover { background: ${hover}; }
+    .supplier-row { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
     .supplier-icon { width: 16px; height: 16px; flex-shrink: 0; object-fit: contain; }
     .supplier-icon-placeholder { width: 16px; height: 16px; flex-shrink: 0; font-size: 14px; line-height: 16px; text-align: center; }
     .supplier-link { flex: 1; color: ${link}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
-    .supplier-item:hover .supplier-link { text-decoration: underline; }
+    .supplier-row:hover .supplier-link { text-decoration: underline; }
     .supplier-remove { background: none; border: none; color: #999; cursor: pointer; font-size: 1.2em; padding: 0 4px; flex-shrink: 0; }
-    .supplier-remove:hover { color: ${error}; }  `;
+    .supplier-remove:hover { color: ${error}; }
+    .supplier-parsed { margin-top: 4px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 12px; padding-left: 24px; }
+    .supplier-parsed-loading { font-size: 0.9em; color: #999; }
+    .sp-price { font-weight: 700; font-size: 1.5em; cursor: pointer; white-space: nowrap; position: relative; }
+    .sp-price:hover { text-decoration: underline; }
+    .sp-price::after { content: '✓'; margin-left: 4px; color: ${success}; font-size: 0.8em; visibility: hidden; opacity: 0; }
+    .sp-price.copied::after { visibility: visible; opacity: 1; }
+    .sp-stock { display: flex; flex-direction: column; gap: 2px; }
+    .sp-stock-item { color: #333; }
+    .sp-stock-item.in-stock { color: #333; }
+    .sp-stock-item.no-stock { color: ${error}; }  `;
 }

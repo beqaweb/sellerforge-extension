@@ -81,6 +81,7 @@ export const MSG = {
   // Suppliers
   ADD_SUPPLIER: "ADD_SUPPLIER",
   REMOVE_SUPPLIER: "REMOVE_SUPPLIER",
+  PARSE_SUPPLIER: "PARSE_SUPPLIER",
 };
 
 export const DEFAULT_ORDERS_URL =
