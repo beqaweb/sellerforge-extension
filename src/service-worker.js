@@ -8,7 +8,10 @@ import {
 } from "./background/scheduler";
 import { getCurrentUser, initFirebase, signIn, signOut } from "./firebase/auth";
 import {
+  addSupplier,
   getRequestedOrders,
+  getSuppliers,
+  removeSupplier,
   stopWatchingOrders,
   watchRequestedOrders,
 } from "./firebase/firestore";
@@ -186,9 +189,10 @@ async function handleAsinInfo(info, tab) {
   );
 
   try {
-    const res = await fetch(
-      `${API_BASE}/api/product/${encodeURIComponent(asin)}`,
-    );
+    const [res, suppliers] = await Promise.all([
+      fetch(`${API_BASE}/api/product/${encodeURIComponent(asin)}`),
+      getSuppliers(asin).catch(() => []),
+    ]);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.detail || `Server error (${res.status})`);
@@ -199,6 +203,7 @@ async function handleAsinInfo(info, tab) {
       {
         type: MSG.SHOW_ASIN_INFO,
         product,
+        suppliers,
       },
       { frameId: 0 },
     );
@@ -288,6 +293,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .catch((err) => sendResponse({ ok: false, error: err.message }));
       return true;
 
+    case MSG.ADD_SUPPLIER:
+      handleAddSupplier(message.asin, message.url, sendResponse);
+      return true;
+
+    case MSG.REMOVE_SUPPLIER:
+      handleRemoveSupplier(message.asin, message.supplierId, sendResponse);
+      return true;
+
     default:
       return false;
   }
@@ -318,4 +331,30 @@ async function handleSignOut(sendResponse) {
 async function handleStartRun(sendResponse) {
   sendResponse({ ok: true });
   await runManager.startRun();
+}
+
+async function handleAddSupplier(asin, url, sendResponse) {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/parseurl?url=${encodeURIComponent(url)}`,
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `Failed to validate URL (${res.status})`);
+    }
+    const { title, icon } = await res.json();
+    const supplier = await addSupplier(asin, { url, title, icon });
+    sendResponse({ ok: true, supplier });
+  } catch (err) {
+    sendResponse({ ok: false, error: err.message });
+  }
+}
+
+async function handleRemoveSupplier(asin, supplierId, sendResponse) {
+  try {
+    await removeSupplier(asin, supplierId);
+    sendResponse({ ok: true });
+  } catch (err) {
+    sendResponse({ ok: false, error: err.message });
+  }
 }

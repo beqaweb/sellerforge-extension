@@ -128,3 +128,36 @@ export function stopWatchingOrders() {
     activeWatcher = null;
   }
 }
+
+// --- Suppliers ---
+
+function suppliersCollection(asin) {
+  const user = getRawUser();
+  if (!user) throw new Error("Not authenticated");
+  return getDb()
+    .collection("users")
+    .doc(user.uid)
+    .collection("suppliers")
+    .doc(asin)
+    .collection("items");
+}
+
+export async function getSuppliers(asin) {
+  const col = suppliersCollection(asin);
+  const snapshot = await col.orderBy("createdAt", "desc").get();
+  const suppliers = [];
+  snapshot.forEach((doc) => suppliers.push({ id: doc.id, ...doc.data() }));
+  return suppliers;
+}
+
+export async function addSupplier(asin, { url, title, icon }) {
+  const col = suppliersCollection(asin);
+  const now = new Date().toISOString();
+  const docRef = await col.add({ url, title, icon, createdAt: now });
+  return { id: docRef.id, url, title, icon, createdAt: now };
+}
+
+export async function removeSupplier(asin, supplierId) {
+  const col = suppliersCollection(asin);
+  await col.doc(supplierId).delete();
+}
