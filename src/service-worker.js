@@ -43,11 +43,7 @@ function createContextMenu(id, title, contexts = ["selection"]) {
   });
 }
 
-createContextMenu("generate-fnsku-label", "Generate FNSKU label", [
-  "selection",
-  "page",
-]);
-createContextMenu("asin-info", "ASIN info", ["selection", "page"]);
+createContextMenu("asin-tools", "SellerForge > ASIN", ["selection", "page"]);
 
 // Ensure the content script is injected in the given frame (needed for non-Seller Central pages)
 async function ensureContentScript(tabId, frameId = 0) {
@@ -66,82 +62,35 @@ async function ensureContentScript(tabId, frameId = 0) {
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === "generate-fnsku-label") {
-    return handleGenerateLabel(info, tab);
-  }
-  if (info.menuItemId === "asin-info") {
-    return handleAsinInfo(info, tab);
+  if (info.menuItemId === "asin-tools") {
+    return handleAsinTools(info, tab);
   }
 });
 
-async function handleGenerateLabel(info, tab) {
-  const selectedText = (info.selectionText || "").trim();
-  log("Context menu clicked, selection:", selectedText);
-
-  // Ensure content script is available in the right-clicked frame
-  await ensureContentScript(tab.id, info.frameId);
-
-  // Ask content script to scrape product details from the DOM (in the frame that was right-clicked)
-  let details = null;
-  try {
-    details = await chrome.tabs.sendMessage(
-      tab.id,
-      {
-        type: MSG.SCRAPE_PRODUCT_DETAILS,
-      },
-      { frameId: info.frameId },
-    );
-  } catch (err) {
-    log("Could not scrape product details:", err.message);
-  }
-
-  const code = details?.fnsku || details?.asin || selectedText;
-  const title = details?.title || "";
-  const condition = details?.condition || "New";
-
-  if (!code) {
-    log("No code found, skipping label generation");
-    return;
-  }
-
-  // Build API URL and open the inline PDF directly in a new tab, next to the current tab
-  const params = new URLSearchParams({ code });
-  if (title) params.set("title", title);
-  if (condition) params.set("condition", condition);
-
-  const pdfUrl = `${API_BASE}/api/label?${params}`;
-  log("Opening label PDF:", pdfUrl);
-
-  // Open beside the current tab if possible
-  chrome.tabs.create({
-    url: pdfUrl,
-    index: tab.index + 1,
-    openerTabId: tab.id,
-  });
-}
-
-async function handleAsinInfo(info, tab) {
-  let asin = null;
-
+async function handleAsinTools(info, tab) {
   // Ensure content script is available in both the right-clicked frame and the top frame
   await ensureContentScript(tab.id, info.frameId);
   if (info.frameId !== 0) await ensureContentScript(tab.id, 0);
 
-  // 1) Try scraping product details from the DOM (in the frame that was right-clicked)
+  let asin = null;
+  let productDetails = null;
+
+  // 1) Try scraping full product details from the DOM
   try {
     const details = await chrome.tabs.sendMessage(
       tab.id,
-      {
-        type: MSG.SCRAPE_PRODUCT_DETAILS,
-      },
+      { type: MSG.SCRAPE_PRODUCT_DETAILS },
       { frameId: info.frameId },
     );
-    if (details?.asin) asin = details.asin;
+    if (details?.asin) {
+      asin = details.asin;
+      productDetails = details;
+    }
   } catch (err) {
     log("Could not scrape product details:", err.message);
   }
 
-  // 2) Fall back to selected text or right-clicked element (in the correct frame)
+  // 2) Fall back to selected text or right-clicked element for ASIN only
   if (!asin) {
     asin = (info.selectionText || "").trim();
   }
@@ -149,9 +98,7 @@ async function handleAsinInfo(info, tab) {
     try {
       const result = await chrome.tabs.sendMessage(
         tab.id,
-        {
-          type: MSG.GET_CLICKED_ASIN,
-        },
+        { type: MSG.GET_CLICKED_ASIN },
         { frameId: info.frameId },
       );
       asin = result?.asin || "";
@@ -171,7 +118,7 @@ async function handleAsinInfo(info, tab) {
     chrome.tabs.sendMessage(
       tab.id,
       {
-        type: MSG.SHOW_ASIN_INFO,
+        type: MSG.SHOW_ASIN_TOOLS,
         error: `"${asin}" is not a valid ASIN`,
       },
       { frameId: 0 },
@@ -179,12 +126,12 @@ async function handleAsinInfo(info, tab) {
     return;
   }
 
-  log("ASIN info lookup:", asin);
+  log("ASIN tools lookup:", asin);
 
   // Show loading overlay in the top frame
   chrome.tabs.sendMessage(
     tab.id,
-    { type: MSG.SHOW_ASIN_INFO_LOADING },
+    { type: MSG.SHOW_ASIN_TOOLS_LOADING },
     { frameId: 0 },
   );
 
@@ -201,18 +148,19 @@ async function handleAsinInfo(info, tab) {
     chrome.tabs.sendMessage(
       tab.id,
       {
-        type: MSG.SHOW_ASIN_INFO,
+        type: MSG.SHOW_ASIN_TOOLS,
         product,
         suppliers,
+        productDetails,
       },
       { frameId: 0 },
     );
   } catch (err) {
-    log("ASIN info error:", err.message);
+    log("ASIN tools error:", err.message);
     chrome.tabs.sendMessage(
       tab.id,
       {
-        type: MSG.SHOW_ASIN_INFO,
+        type: MSG.SHOW_ASIN_TOOLS,
         error: err.message,
       },
       { frameId: 0 },
@@ -301,6 +249,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleRemoveSupplier(message.asin, message.supplierId, sendResponse);
       return true;
 
+    case MSG.GENERATE_LABEL:
+      handleGenerateLabel(message, sender);
+      sendResponse({ ok: true });
+      return false;
+
+    case MSG.GET_LABEL_SIZES:
+      fetch(`${API_BASE}/api/label/sizes`)
+        .then((res) => res.json())
+        .then((data) => sendResponse({ ok: true, sizes: data.sizes }))
+        .catch(() => sendResponse({ ok: false, sizes: [] }));
+      return true;
+
     default:
       return false;
   }
@@ -357,4 +317,20 @@ async function handleRemoveSupplier(asin, supplierId, sendResponse) {
   } catch (err) {
     sendResponse({ ok: false, error: err.message });
   }
+}
+
+function handleGenerateLabel({ code, title, condition, size }, sender) {
+  const params = new URLSearchParams({ code });
+  if (title) params.set("title", title);
+  if (condition) params.set("condition", condition);
+  if (size != null) params.set("size", size);
+
+  const pdfUrl = `${API_BASE}/api/label?${params}`;
+  log("Opening label PDF:", pdfUrl);
+
+  chrome.tabs.create({
+    url: pdfUrl,
+    index: (sender.tab?.index ?? 0) + 1,
+    openerTabId: sender.tab?.id,
+  });
 }

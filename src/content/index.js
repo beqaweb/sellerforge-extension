@@ -1,5 +1,5 @@
 import { MSG, log } from "../shared/constants";
-import { showAsinInfoOverlay } from "./asin-info-overlay";
+import { showAsinToolsDialog } from "./asin-tools-dialog";
 import {
   clickConfirmYes,
   clickRequestReview,
@@ -96,13 +96,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(response);
       break;
 
-    case MSG.SHOW_ASIN_INFO_LOADING:
-      showAsinInfoOverlay({ ...message, loading: true });
+    case MSG.SHOW_ASIN_TOOLS_LOADING:
+      showAsinToolsDialog({ ...message, loading: true });
       sendResponse({ ok: true });
       break;
 
-    case MSG.SHOW_ASIN_INFO:
-      showAsinInfoOverlay(message);
+    case MSG.SHOW_ASIN_TOOLS:
+      showAsinToolsDialog(message);
       sendResponse({ ok: true });
       break;
 

@@ -25,8 +25,6 @@ export function initFirebase() {
 }
 
 export async function signIn() {
-  initFirebase();
-
   const token = await new Promise((resolve, reject) => {
     chrome.identity.getAuthToken({ interactive: true }, (tok) => {
       if (chrome.runtime.lastError) {
@@ -44,8 +42,6 @@ export async function signIn() {
 }
 
 export async function signOut() {
-  initFirebase();
-
   const token = await new Promise((resolve) => {
     chrome.identity.getAuthToken({ interactive: false }, (tok) => {
       resolve(tok);
@@ -63,12 +59,17 @@ export async function signOut() {
 }
 
 export async function getCurrentUser() {
-  initFirebase();
   await authReady;
   return currentUser ? serializeUser(currentUser) : null;
 }
 
 export function getRawUser() {
+  return currentUser;
+}
+
+export async function requireUser() {
+  await authReady;
+  if (!currentUser) throw new Error("Not authenticated");
   return currentUser;
 }
 

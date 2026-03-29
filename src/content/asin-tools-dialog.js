@@ -3,7 +3,7 @@ import { MSG } from "../shared/constants";
 let currentHost = null;
 let currentShadow = null;
 
-export function showAsinInfoOverlay(data) {
+export function showAsinToolsDialog(data) {
   if (data.loading) {
     showLoading();
     return;
@@ -14,7 +14,7 @@ export function showAsinInfoOverlay(data) {
     return;
   }
 
-  showProduct(data.product, data.suppliers || []);
+  showProduct(data.product, data.suppliers || [], data.productDetails || null);
 }
 
 function showLoading() {
@@ -25,7 +25,7 @@ function showLoading() {
   wireClose(dlg);
 }
 
-function showProduct(product, suppliers) {
+function showProduct(product, suppliers, productDetails) {
   // If already showing loading, reuse its host; otherwise create fresh
   if (!currentHost) {
     removeOverlay();
@@ -34,10 +34,12 @@ function showProduct(product, suppliers) {
   const shadow = currentShadow;
   const dlg = shadow.getElementById("dlg");
 
+  const labelCode = productDetails?.fnsku || productDetails?.asin;
+  const labelTitle = productDetails?.title || "";
+  const labelCondition = productDetails?.condition || "New";
+
   dlg.innerHTML = `
-    <form method="dialog">
-      <button class="close-btn" title="Close">&times;</button>
-    </form>
+    <button type="button" class="close-btn" title="Close">&times;</button>
     <div class="header">
       ${product.image ? `<img class="thumb" src="${escapeAttr(product.image)}" alt="" />` : ""}
       <strong>${escapeHtml(product.title || "No title")}</strong>
@@ -48,6 +50,22 @@ function showProduct(product, suppliers) {
       ${row("EAN", product.ean)}
       ${row("MPN", product.mpn)}
     </table>
+    ${
+      labelCode
+        ? `
+    <div class="label-section">
+      <div class="label-row">
+        <select class="label-size-select" disabled>
+          <option>Loading sizes…</option>
+        </select>
+        <button type="button" class="label-btn" disabled
+          data-code="${escapeAttr(labelCode)}"
+          data-title="${escapeAttr(labelTitle)}"
+          data-condition="${escapeAttr(labelCondition)}">Generate FNSKU Label</button>
+      </div>
+    </div>`
+        : ""
+    }
     <div class="suppliers-section" data-asin="${escapeAttr(product.asin)}">
       <div class="suppliers-header">Suppliers</div>
       <div class="supplier-add-row">
@@ -63,6 +81,7 @@ function showProduct(product, suppliers) {
 
   wireClose(dlg);
   wireSuppliers(shadow);
+  wireLabelBtn(shadow);
 
   shadow.querySelectorAll("tr[data-value]").forEach((tr) => {
     tr.addEventListener("click", () => {
@@ -82,10 +101,8 @@ function showError(message) {
   const dlg = currentShadow.getElementById("dlg");
 
   dlg.innerHTML = `
-    <form method="dialog">
-      <button class="close-btn" title="Close">&times;</button>
-    </form>
-    <p style="color:#c62828;margin:0">Failed to load ASIN info:<br/>${escapeHtml(message)}</p>
+    <button type="button" class="close-btn" title="Close">&times;</button>
+    <p style="color:#c62828;margin:0">Failed to load ASIN tools:<br/>${escapeHtml(message)}</p>
   `;
 
   wireClose(dlg);
@@ -95,7 +112,7 @@ function showError(message) {
 function createDialog(content) {
   removeOverlay();
   const host = document.createElement("div");
-  host.id = "sf-asin-info-host";
+  host.id = "sf-asin-tools-host";
   const shadow = host.attachShadow({ mode: "closed" });
 
   shadow.innerHTML = `
@@ -113,7 +130,13 @@ function createDialog(content) {
 }
 
 function wireClose(dlg) {
+  const closeBtn = dlg.querySelector(".close-btn");
+  if (closeBtn) closeBtn.addEventListener("click", removeOverlay);
+  dlg.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.preventDefault();
+  });
   dlg.addEventListener("click", (e) => {
+    if (e.clientX === 0 && e.clientY === 0) return;
     const rect = dlg.getBoundingClientRect();
     const clickedOutside =
       e.clientX < rect.left ||
@@ -131,6 +154,40 @@ function removeOverlay() {
     currentHost = null;
     currentShadow = null;
   }
+}
+
+function wireLabelBtn(shadow) {
+  const btn = shadow.querySelector(".label-btn");
+  if (!btn) return;
+
+  const select = shadow.querySelector(".label-size-select");
+
+  // Fetch available label sizes
+  chrome.runtime.sendMessage({ type: MSG.GET_LABEL_SIZES }, (response) => {
+    if (!response?.ok || !response.sizes?.length) {
+      select.innerHTML = `<option value="0">Default</option>`;
+    } else {
+      select.innerHTML = response.sizes
+        .map(
+          (s) =>
+            `<option value="${s.index}"${s.index === 1 ? " selected" : ""}>${escapeHtml(s.name)}</option>`,
+        )
+        .join("");
+    }
+    select.disabled = false;
+    btn.disabled = false;
+  });
+
+  btn.addEventListener("click", () => {
+    const { code, title, condition } = btn.dataset;
+    chrome.runtime.sendMessage({
+      type: MSG.GENERATE_LABEL,
+      code,
+      title,
+      condition,
+      size: select.value,
+    });
+  });
 }
 
 function row(label, value) {
@@ -170,11 +227,11 @@ function supplierItem(supplier) {
     ? `<img class="supplier-icon" src="${escapeAttr(supplier.icon)}" alt="" />`
     : `<span class="supplier-icon-placeholder">\uD83C\uDF10</span>`;
   return `
-    <div class="supplier-item" data-id="${escapeAttr(supplier.id)}">
+    <a class="supplier-item" data-id="${escapeAttr(supplier.id)}" href="${escapeAttr(supplier.url)}" target="_blank" rel="noopener">
       ${iconHtml}
-      <a class="supplier-link" href="${escapeAttr(supplier.url)}" target="_blank" rel="noopener">${escapeHtml(title)}</a>
+      <span class="supplier-link">${escapeHtml(title)}</span>
       <button class="supplier-remove" title="Remove">&times;</button>
-    </div>
+    </a>
   `;
 }
 
@@ -185,7 +242,7 @@ function wireSuppliers(shadow) {
   const list = shadow.querySelector(".supplier-list");
   const asin = shadow.querySelector(".suppliers-section").dataset.asin;
 
-  addBtn.addEventListener("click", async () => {
+  async function addSupplierUrl() {
     const url = input.value.trim();
     errorEl.style.display = "none";
     errorEl.textContent = "";
@@ -221,10 +278,16 @@ function wireSuppliers(shadow) {
       addBtn.disabled = false;
       addBtn.textContent = "Add";
     }
-  });
+  }
+
+  addBtn.addEventListener("click", addSupplierUrl);
 
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") addBtn.click();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      addSupplierUrl();
+    }
   });
 
   list.querySelectorAll(".supplier-item").forEach((el) => {
@@ -258,36 +321,56 @@ const FONT_FAMILY =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
 function getStyles() {
+  const primary = "#ff9900";
+  const primaryHover = "#e68a00";
+  const primaryDisabled = "#ffcc80";
+  const link = "#1a6dd4";
+  const error = "#c62828";
+  const border = "#ccc";
+  const borderLight = "#e0e0e0";
+  const hover = "#f5f5f5";
+  const muted = "#666";
+  const mutedLight = "#888";
+  const success = "#4caf50";
+
   return `
     :host { font-family: ${FONT_FAMILY}; font-size: 14px; }
     dialog { font: inherit; border: none; border-radius: 10px; padding: 20px; max-width: 440px; width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.25); outline: none; }
     dialog::backdrop { background: rgba(0,0,0,0.4); }
-    .close-btn { position: absolute; top: 6px; right: 10px; background: none; border: none; font-size: 1.4em; cursor: pointer; color: #666; }
+    .close-btn { position: absolute; top: 6px; right: 10px; background: none; border: none; font-size: 1.4em; cursor: pointer; color: ${muted}; }
     .close-btn:hover { color: #000; }
     .header { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; padding-right: 24px; line-height: 1.4; }
-    .thumb { width: 80px; height: 80px; flex-shrink: 0; object-fit: contain; border-radius: 6px; border: 1px solid #e0e0e0; background: #fafafa; }
+    .thumb { width: 80px; height: 80px; flex-shrink: 0; object-fit: contain; border-radius: 6px; border: 1px solid ${borderLight}; background: #fafafa; }
     table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; font-size: 0.9em; text-transform: uppercase; color: #888; padding: 5px 8px; white-space: nowrap; }
+    th { text-align: left; font-size: 0.9em; text-transform: uppercase; color: ${mutedLight}; padding: 5px 8px; white-space: nowrap; }
     td { padding: 5px 8px; user-select: all; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; }
     tr[data-value] { cursor: pointer; }
-    tr[data-value]:hover { background: #f5f5f5; }
-    tr.copied td:last-child::after { content: '✓ Copied'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #4caf50; font-size: 0.8em; }
-    .loading { text-align: center; padding: 24px; color: #666; }    .suppliers-section { margin-top: 16px; border-top: 1px solid #e0e0e0; padding-top: 12px; }
+    tr[data-value]:hover { background: ${hover}; }
+    tr.copied td:last-child::after { content: '✓ Copied'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: ${success}; font-size: 0.8em; }
+    .loading { text-align: center; padding: 24px; color: ${muted}; }    .label-section { margin-top: 12px; }
+    .label-row { display: flex; gap: 8px; }
+    .label-size-select { flex: 1; padding: 6px 10px; border: 1px solid ${border}; border-radius: 6px; font: inherit; font-size: 0.9em; background: #fff; }
+    .label-size-select:focus { outline: none; border-color: ${primary}; }
+    .label-size-select:disabled { background: ${hover}; color: #999; }
+    .label-btn { padding: 6px 14px; background: ${primary}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.9em; white-space: nowrap; }
+    .label-btn:hover { background: ${primaryHover}; }
+    .label-btn:disabled { background: ${primaryDisabled}; cursor: not-allowed; }
+    .suppliers-section { margin-top: 16px; border-top: 1px solid ${borderLight}; padding-top: 12px; }
     .suppliers-header { font-weight: 600; font-size: 0.95em; margin-bottom: 8px; }
     .supplier-add-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .supplier-input { flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font: inherit; font-size: 0.9em; }
-    .supplier-input:focus { outline: none; border-color: #1976d2; }
-    .supplier-add-btn { padding: 6px 14px; background: #1976d2; color: #fff; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.9em; white-space: nowrap; }
-    .supplier-add-btn:hover { background: #1565c0; }
-    .supplier-add-btn:disabled { background: #90caf9; cursor: not-allowed; }
-    .supplier-error { color: #c62828; font-size: 0.85em; margin-bottom: 6px; }
+    .supplier-input { flex: 1; padding: 6px 10px; border: 1px solid ${border}; border-radius: 6px; font: inherit; font-size: 0.9em; }
+    .supplier-input:focus { outline: none; border-color: ${primary}; }
+    .supplier-add-btn { padding: 6px 14px; background: ${primary}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.9em; white-space: nowrap; }
+    .supplier-add-btn:hover { background: ${primaryHover}; }
+    .supplier-add-btn:disabled { background: ${primaryDisabled}; cursor: not-allowed; }
+    .supplier-error { color: ${error}; font-size: 0.85em; margin-bottom: 6px; }
     .supplier-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
-    .supplier-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; }
-    .supplier-item:hover { background: #f5f5f5; }
+    .supplier-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: inherit; }
+    .supplier-item:hover { background: ${hover}; }
     .supplier-icon { width: 16px; height: 16px; flex-shrink: 0; object-fit: contain; }
     .supplier-icon-placeholder { width: 16px; height: 16px; flex-shrink: 0; font-size: 14px; line-height: 16px; text-align: center; }
-    .supplier-link { flex: 1; color: #1976d2; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
-    .supplier-link:hover { text-decoration: underline; }
+    .supplier-link { flex: 1; color: ${link}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
+    .supplier-item:hover .supplier-link { text-decoration: underline; }
     .supplier-remove { background: none; border: none; color: #999; cursor: pointer; font-size: 1.2em; padding: 0 4px; flex-shrink: 0; }
-    .supplier-remove:hover { color: #c62828; }  `;
+    .supplier-remove:hover { color: ${error}; }  `;
 }
