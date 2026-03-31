@@ -1,4 +1,5 @@
 import { MSG } from "../shared/constants";
+import { formatPrice } from "../shared/utils";
 import {
   COLORS,
   FONT_FAMILY,
@@ -349,7 +350,7 @@ async function fetchSupplierData(el) {
     const container = document.createElement("div");
     container.className = "supplier-parsed";
     container.innerHTML = `
-        ${d.price ? `<span class="sp-price" title="Click to copy">${escapeHtml(`$${d.price}`)}</span>` : ""}
+        ${d.price ? `<span class="sp-price" title="Click to copy">${escapeHtml(`$${formatPrice(d.price)}`)}</span>` : ""}
         ${stockHtml ? `<div class="sp-stock">${stockHtml}</div>` : ""}
     `;
     el.appendChild(container);

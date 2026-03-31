@@ -1,4 +1,5 @@
 import { MSG, log } from "../shared/constants";
+import { formatPrice } from "../shared/utils";
 import { scrapeProductDetails } from "./dom";
 import {
   COLORS,
@@ -201,7 +202,7 @@ async function fetchSupplierData(el, url) {
       const priceEl = document.createElement("span");
       priceEl.className = "sf-sp-price";
       priceEl.title = "Click to copy";
-      priceEl.textContent = `$${d.price}`;
+      priceEl.textContent = `$${formatPrice(d.price)}`;
       priceEl.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();

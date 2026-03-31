@@ -2,6 +2,11 @@ export function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function formatPrice(value) {
+  const n = parseFloat(value);
+  return isNaN(n) ? value : n.toFixed(2);
+}
+
 export function nowISO() {
   return new Date().toISOString();
 }
