@@ -67,7 +67,7 @@ export function supplierCSS(p = "") {
  */
 export function supplierListCSS(p = "") {
   return `
-    ${s(p, "supplier-list")} { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; width: 0; min-width: 100%; overflow: hidden; }`;
+    ${s(p, "supplier-list")} { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; width: 0; min-width: 100%; overflow: hidden; }`;
 }
 
 // Helper: build a class selector with optional prefix
