@@ -11,6 +11,7 @@ module.exports = (env, argv) => {
       popup: "./src/index.jsx",
       "service-worker": "./src/service-worker.js",
       content: "./src/content/index.js",
+      "content-dandh": "./src/content/dandh.js",
     },
     output: {
       path: path.resolve(__dirname, "dist"),

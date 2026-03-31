@@ -278,6 +278,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .catch(() => sendResponse({ ok: false, sizes: [] }));
       return true;
 
+    case MSG.OPEN_SELLERAMP:
+      chrome.runtime.sendMessage("kidmffepbniamfbibhfgdakkggchipjl", {
+        command: "show_sas_ext",
+        search_term: message.searchTerm,
+        force_search_term: true,
+        tab: { id: sender.tab?.id },
+      });
+      sendResponse({ ok: true });
+      return false;
+
     default:
       return false;
   }

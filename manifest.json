@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SellerForge",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyuO88KWV/1yId3YjEsRlbga+F4uPlAf8oxARPyob07tI9/cOSofmTPF6pWZfix142l9ukXnKfFT8hDTV2e8td081eDu0oPDK9h5vnsvEpa3RdE1oA9a/B0dWTTnhX+1DoCwBuIuzbSqVDwakpaRWH3mBKcvNCpVZ3v5FYLnn7c8VYEhDByKjdPBE2JhqBgMdloUYBUaUDWS+Cq95Aywoah8e5trxMqp7/kUi0gJmHQs/G5NVyRI7EPzBs62n6nekpbVA2cQ9Vm97DHtU6A8ikHljj5j6gea+GgsNdWWdUpCoHKCIJdy9rwvS3wGHNTWy2gDSudlu4HeOmiikvAd0OQIDAQAB",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAitc4zHRwlLKzw3FJaJwLvWGnX8JA/fB4H6bq7V9ojMNMHvvu6EJKE13i7+QowWz2z08FHMS89M9U8RSd8+opunhfH3+jlXWgXYMU7SJY/rCCKZO49p3hel/hpV+h2ObalkIoaaeRMzcCzq8IEXNmtElABEOpIM5epRxkg3WkVJns+Sx+QFU5m/qu8v2oGGodJB+dzvm9SvGWh6D8Cc1sZnDSZL3EzdyAT10JEDiKQRGVgIgls3PuxEzN+9wv6t+M3rS+x7o+YoLSTWuplFZ5fKl1c0UUCnUIwzpxGTOAV0SQ2+KA7UL9RIjY9Ky/NLwnCHD/UwNR2Vr+7NNnD2WNfQIDAQAB",
   "version": "1.0.0",
   "description": "Toolkit for Amazon sellers — automate review requests and more.",
   "permissions": [
@@ -19,6 +19,7 @@
     "https://sellercentral.amazon.co.uk/*",
     "https://sellercentral.amazon.de/*",
     "https://sellercentral.amazon.ca/*",
+    "https://*.dandh.ca/*",
     "https://amz-tools.shekmachine.duckdns.org/*"
   ],
   "background": {
@@ -35,6 +36,11 @@
       "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": true
+    },
+    {
+      "matches": ["https://*.dandh.ca/*"],
+      "js": ["content-dandh.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
