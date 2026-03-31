@@ -136,15 +136,7 @@ async function handleAsinTools(info, tab) {
   );
 
   try {
-    const [res, suppliers] = await Promise.all([
-      fetch(`${API_BASE}/api/product/${encodeURIComponent(asin)}`),
-      getSuppliers(asin).catch(() => []),
-    ]);
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.detail || `Server error (${res.status})`);
-    }
-    const product = await res.json();
+    const { product, suppliers } = await getAsinData(asin);
     chrome.tabs.sendMessage(
       tab.id,
       {
@@ -166,6 +158,19 @@ async function handleAsinTools(info, tab) {
       { frameId: 0 },
     );
   }
+}
+
+async function getAsinData(asin) {
+  const [res, suppliers] = await Promise.all([
+    fetch(`${API_BASE}/api/product/${encodeURIComponent(asin)}`),
+    getSuppliers(asin).catch(() => []),
+  ]);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Server error (${res.status})`);
+  }
+  const product = await res.json();
+  return { product, suppliers };
 }
 
 // Single RunManager instance
@@ -238,6 +243,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case MSG.GET_REQUESTED_ORDERS:
       getRequestedOrders()
         .then((orders) => sendResponse({ ok: true, orders }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
+
+    case MSG.GET_ASIN_DATA:
+      getAsinData(message.asin)
+        .then(({ product, suppliers }) =>
+          sendResponse({ ok: true, product, suppliers }),
+        )
         .catch((err) => sendResponse({ ok: false, error: err.message }));
       return true;
 

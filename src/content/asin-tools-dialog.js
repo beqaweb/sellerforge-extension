@@ -1,4 +1,11 @@
 import { MSG } from "../shared/constants";
+import {
+  COLORS,
+  FONT_FAMILY,
+  productTableCSS,
+  supplierCSS,
+  supplierListCSS,
+} from "./styles";
 
 let currentHost = null;
 let currentShadow = null;
@@ -44,7 +51,7 @@ function showProduct(product, suppliers, productDetails) {
       ${product.image ? `<img class="thumb" src="${escapeAttr(product.image)}" alt="" />` : ""}
       <strong>${escapeHtml(product.title || "No title")}</strong>
     </div>
-    <table>
+    <table class="product-table">
       ${row("ASIN", product.asin)}
       ${row("UPC", product.upc)}
       ${row("EAN", product.ean)}
@@ -364,71 +371,42 @@ async function fetchSupplierData(el) {
   }
 }
 
-const FONT_FAMILY =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+const FONT_FAMILY_LOCAL = FONT_FAMILY;
 
 function getStyles() {
-  const primary = "#ff9900";
-  const primaryHover = "#e68a00";
-  const primaryDisabled = "#ffcc80";
-  const link = "#1a6dd4";
-  const error = "#c62828";
-  const border = "#ccc";
-  const borderLight = "#e0e0e0";
-  const hover = "#f5f5f5";
-  const muted = "#666";
-  const mutedLight = "#888";
-  const success = "#4caf50";
+  const c = COLORS;
 
   return `
-    :host { font-family: ${FONT_FAMILY}; font-size: 14px; }
+    :host { font-family: ${FONT_FAMILY_LOCAL}; font-size: 14px; }
     dialog { font: inherit; border: none; border-radius: 10px; padding: 20px; max-width: 440px; width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.25); outline: none; }
     dialog::backdrop { background: rgba(0,0,0,0.4); }
-    .close-btn { position: absolute; top: 6px; right: 10px; background: none; border: none; font-size: 1.4em; cursor: pointer; color: ${muted}; }
+    .close-btn { position: absolute; top: 6px; right: 10px; background: none; border: none; font-size: 1.4em; cursor: pointer; color: ${c.muted}; }
     .close-btn:hover { color: #000; }
     .header { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; padding-right: 24px; line-height: 1.4; }
-    .thumb { width: 80px; height: 80px; flex-shrink: 0; object-fit: contain; border-radius: 6px; border: 1px solid ${borderLight}; background: #fafafa; }
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; font-size: 0.9em; text-transform: uppercase; color: ${mutedLight}; padding: 5px 8px; white-space: nowrap; }
-    td { padding: 5px 8px; user-select: all; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; }
-    tr[data-value] { cursor: pointer; }
-    tr[data-value]:hover { background: ${hover}; }
-    tr.copied td:last-child::after { content: '✓ Copied'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: ${success}; font-size: 0.8em; }
-    .loading { text-align: center; padding: 24px; color: ${muted}; }    .label-section { margin-top: 12px; }
+    .thumb { width: 80px; height: 80px; flex-shrink: 0; object-fit: contain; border-radius: 6px; border: 1px solid ${c.borderLight}; background: #fafafa; }
+    ${productTableCSS()}
+    .product-table th { font-size: 0.9em; color: ${c.mutedLight}; padding: 5px 8px; }
+    .product-table td { padding: 5px 8px; color: inherit; }
+    .product-table tr.copied td:last-child::after { content: '✓ Copied'; font-size: 0.8em; }
+    .loading { text-align: center; padding: 24px; color: ${c.muted}; }
+    .label-section { margin-top: 12px; }
     .label-row { display: flex; gap: 8px; }
-    .label-size-select { flex: 1; padding: 6px 10px; border: 1px solid ${border}; border-radius: 6px; font: inherit; font-size: 0.9em; background: #fff; }
-    .label-size-select:focus { outline: none; border-color: ${primary}; }
-    .label-size-select:disabled { background: ${hover}; color: #999; }
-    .label-btn { padding: 6px 14px; background: ${primary}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.9em; white-space: nowrap; }
-    .label-btn:hover { background: ${primaryHover}; }
-    .label-btn:disabled { background: ${primaryDisabled}; cursor: not-allowed; }
-    .suppliers-section { margin-top: 16px; border-top: 1px solid ${borderLight}; padding-top: 12px; }
+    .label-size-select { flex: 1; padding: 6px 10px; border: 1px solid ${c.border}; border-radius: 6px; font: inherit; font-size: 0.9em; background: #fff; }
+    .label-size-select:focus { outline: none; border-color: ${c.primary}; }
+    .label-size-select:disabled { background: ${c.hover}; color: #999; }
+    .label-btn { padding: 6px 14px; background: ${c.primary}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.9em; white-space: nowrap; }
+    .label-btn:hover { background: ${c.primaryHover}; }
+    .label-btn:disabled { background: ${c.primaryDisabled}; cursor: not-allowed; }
+    .suppliers-section { margin-top: 16px; border-top: 1px solid ${c.borderLight}; padding-top: 12px; }
     .suppliers-header { font-weight: 600; font-size: 0.95em; margin-bottom: 8px; }
     .supplier-add-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .supplier-input { flex: 1; padding: 6px 10px; border: 1px solid ${border}; border-radius: 6px; font: inherit; font-size: 0.9em; }
-    .supplier-input:focus { outline: none; border-color: ${primary}; }
-    .supplier-add-btn { padding: 6px 14px; background: ${primary}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.9em; white-space: nowrap; }
-    .supplier-add-btn:hover { background: ${primaryHover}; }
-    .supplier-add-btn:disabled { background: ${primaryDisabled}; cursor: not-allowed; }
-    .supplier-error { color: ${error}; font-size: 0.85em; margin-bottom: 6px; }
-    .supplier-list { display: flex; flex-direction: column; gap: 4px; max-height: 350px; overflow-y: auto; }
-    .supplier-item { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 6px; }
-    .supplier-item:hover { background: ${hover}; }
-    .supplier-row { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
-    .supplier-icon { width: 16px; height: 16px; flex-shrink: 0; object-fit: contain; }
-    .supplier-icon-placeholder { width: 16px; height: 16px; flex-shrink: 0; font-size: 14px; line-height: 16px; text-align: center; }
-    .supplier-link { flex: 1; color: ${link}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
-    .supplier-row:hover .supplier-link { text-decoration: underline; }
-    .supplier-remove { background: none; border: none; color: #999; cursor: pointer; font-size: 1.2em; padding: 0 4px; flex-shrink: 0; }
-    .supplier-remove:hover { color: ${error}; }
-    .supplier-parsed { margin-top: 4px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 12px; padding-left: 24px; }
-    .supplier-parsed-loading { font-size: 0.9em; color: #999; }
-    .sp-price { font-weight: 700; font-size: 1.5em; cursor: pointer; white-space: nowrap; position: relative; }
-    .sp-price:hover { text-decoration: underline; }
-    .sp-price::after { content: '✓'; margin-left: 4px; color: ${success}; font-size: 0.8em; visibility: hidden; opacity: 0; }
-    .sp-price.copied::after { visibility: visible; opacity: 1; }
-    .sp-stock { display: flex; flex-direction: column; gap: 2px; }
-    .sp-stock-item { color: #333; }
-    .sp-stock-item.in-stock { color: #333; }
-    .sp-stock-item.no-stock { color: ${error}; }  `;
+    .supplier-input { flex: 1; padding: 6px 10px; border: 1px solid ${c.border}; border-radius: 6px; font: inherit; font-size: 0.9em; }
+    .supplier-input:focus { outline: none; border-color: ${c.primary}; }
+    .supplier-add-btn { padding: 6px 14px; background: ${c.primary}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 0.9em; white-space: nowrap; }
+    .supplier-add-btn:hover { background: ${c.primaryHover}; }
+    .supplier-add-btn:disabled { background: ${c.primaryDisabled}; cursor: not-allowed; }
+    .supplier-error { color: ${c.error}; font-size: 0.85em; margin-bottom: 6px; }
+    ${supplierListCSS()}
+    ${supplierCSS()}
+  `;
 }

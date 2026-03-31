@@ -137,8 +137,8 @@ export function extractOrderIdFromPage() {
   return match ? match[0] : null;
 }
 
-export function scrapeProductDetails(hintText = "") {
-  const containers = document.querySelectorAll(
+export function scrapeProductDetails(hintText = "", root = document) {
+  const containers = root.querySelectorAll(
     '[class*="ProductDetails-module__container"]',
   );
   const selection = window.getSelection()?.toString()?.trim() || "";

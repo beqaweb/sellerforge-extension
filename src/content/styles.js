@@ -1,0 +1,76 @@
+// Shared design tokens and style generators for content-script UI
+
+export const FONT_FAMILY =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+export const COLORS = {
+  primary: "#ff9900",
+  primaryHover: "#e68a00",
+  primaryDisabled: "#ffcc80",
+  link: "#1a6dd4",
+  error: "#c62828",
+  border: "#ccc",
+  borderLight: "#e0e0e0",
+  hover: "#f5f5f5",
+  muted: "#696969",
+  mutedLight: "#888",
+  success: "#4caf50",
+  text: "#333",
+};
+
+/**
+ * CSS for a product-info table (UPC / EAN / MPN rows).
+ * @param {string} p - class-name prefix (e.g. "" for shadow DOM, "sf-" for page)
+ */
+export function productTableCSS(p = "") {
+  const c = COLORS;
+  return `
+    ${s(p, "product-table")} { width: 100%; border-collapse: collapse; }
+    ${s(p, "product-table")} th { text-align: left; font-weight: normal; text-transform: uppercase; color: ${c.muted}; padding: 0; white-space: nowrap; width: 1%; min-width: 70px; }
+    ${s(p, "product-table")} td { padding: 0; user-select: all; max-width: 240px; color: ${c.muted}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; }
+    ${s(p, "product-table")} tr[data-value] { cursor: pointer; }
+    ${s(p, "product-table")} tr[data-value]:hover { background: ${c.hover}; }
+    ${s(p, "product-table")} tr.${p}copied td:last-child::after { content: '✓'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: ${c.success}; font-size: 1em; }`;
+}
+
+/**
+ * CSS for supplier items (link + icon + name) and parsed data (price + stock).
+ * @param {string} p - class-name prefix
+ */
+export function supplierCSS(p = "") {
+  const c = COLORS;
+  return `
+    ${s(p, "supplier-item")} { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 6px; }
+    ${s(p, "supplier-item")}:hover { background: ${c.hover}; }
+    ${s(p, "supplier-row")} { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
+    ${s(p, "supplier-icon")} { width: 16px; height: 16px; flex-shrink: 0; object-fit: contain; }
+    ${s(p, "supplier-icon-placeholder")} { width: 16px; height: 16px; flex-shrink: 0; font-size: 14px; line-height: 16px; text-align: center; }
+    ${s(p, "supplier-link")} { flex: 1; color: ${c.link}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
+    ${s(p, "supplier-row")}:hover ${s(p, "supplier-link")} { text-decoration: underline; }
+    ${s(p, "supplier-remove")} { background: none; border: none; color: #999; cursor: pointer; font-size: 1.2em; padding: 0 4px; flex-shrink: 0; }
+    ${s(p, "supplier-remove")}:hover { color: ${c.error}; }
+    ${s(p, "supplier-parsed")} { margin-top: 4px; font-size: 0.9em; color: ${c.text}; display: flex; align-items: flex-start; gap: 12px; padding-left: 24px; }
+    ${s(p, "supplier-parsed-loading")} { font-size: 0.9em; color: #999; }
+    ${s(p, "sp-price")} { font-weight: 700; font-size: 1.3em; cursor: pointer; white-space: nowrap; position: relative; }
+    ${s(p, "sp-price")}:hover { text-decoration: underline; }
+    ${s(p, "sp-price")}::after { content: '✓'; margin-left: 4px; color: ${c.success}; font-size: 1em; visibility: hidden; opacity: 0; }
+    ${s(p, "sp-price")}.${p}copied::after { visibility: visible; opacity: 1; }
+    ${s(p, "sp-stock")} { display: flex; flex-direction: column; gap: 2px; }
+    ${s(p, "sp-stock-item")} { color: ${c.text}; }
+    ${s(p, "sp-stock-item")}.${p}in-stock { color: ${c.text}; }
+    ${s(p, "sp-stock-item")}.${p}no-stock { color: ${c.error}; }`;
+}
+
+/**
+ * CSS for the supplier-list container.
+ * @param {string} p - class-name prefix
+ */
+export function supplierListCSS(p = "") {
+  return `
+    ${s(p, "supplier-list")} { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; }`;
+}
+
+// Helper: build a class selector with optional prefix
+function s(prefix, name) {
+  return `.${prefix}${name}`;
+}

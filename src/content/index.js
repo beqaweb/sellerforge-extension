@@ -10,6 +10,7 @@ import {
   goToNextPage,
   scrapeProductDetails,
 } from "./dom";
+import { initInventoryOverlay } from "./inventory-overlay";
 
 // Track the element under the cursor when context menu opens
 const ASIN_REGEX = /\b[A-Z0-9]{10}\b/;
@@ -18,6 +19,9 @@ let lastRightClickedEl = null;
 document.addEventListener("contextmenu", (e) => {
   lastRightClickedEl = e.target;
 });
+
+// Initialize inventory overlay for Manage Inventory pages
+initInventoryOverlay();
 
 function getAsinFromClickedElement() {
   if (!lastRightClickedEl) return null;
