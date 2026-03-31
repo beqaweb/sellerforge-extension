@@ -69,6 +69,7 @@ function init() {
           type: MSG.OPEN_SELLERAMP,
           searchTerm: upc,
           sasCostPrice: price,
+          sourceUrl: fullUrl,
         });
       } catch (err) {
         log("SellerAmp lookup failed:", err.message);

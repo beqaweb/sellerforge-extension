@@ -288,6 +288,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.sasCostPrice != null) {
         sasMsg.sas_cost_price = message.sasCostPrice;
       }
+      if (message.sourceUrl) {
+        sasMsg.source_url = message.sourceUrl;
+      }
       chrome.runtime.sendMessage("kidmffepbniamfbibhfgdakkggchipjl", sasMsg);
       sendResponse({ ok: true });
       return false;
