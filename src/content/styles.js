@@ -40,12 +40,12 @@ export function productTableCSS(p = "") {
 export function supplierCSS(p = "") {
   const c = COLORS;
   return `
-    ${s(p, "supplier-item")} { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 6px; }
+    ${s(p, "supplier-item")} { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 6px; min-width: 0; overflow: hidden; }
     ${s(p, "supplier-item")}:hover { background: ${c.hover}; }
-    ${s(p, "supplier-row")} { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
+    ${s(p, "supplier-row")} { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; overflow: hidden; }
     ${s(p, "supplier-icon")} { width: 16px; height: 16px; flex-shrink: 0; object-fit: contain; }
     ${s(p, "supplier-icon-placeholder")} { width: 16px; height: 16px; flex-shrink: 0; font-size: 14px; line-height: 16px; text-align: center; }
-    ${s(p, "supplier-link")} { flex: 1; color: ${c.link}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
+    ${s(p, "supplier-link")} { flex: 1; min-width: 0; color: ${c.link}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
     ${s(p, "supplier-row")}:hover ${s(p, "supplier-link")} { text-decoration: underline; }
     ${s(p, "supplier-remove")} { background: none; border: none; color: #999; cursor: pointer; font-size: 1.2em; padding: 0 4px; flex-shrink: 0; }
     ${s(p, "supplier-remove")}:hover { color: ${c.error}; }
@@ -67,7 +67,7 @@ export function supplierCSS(p = "") {
  */
 export function supplierListCSS(p = "") {
   return `
-    ${s(p, "supplier-list")} { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; }`;
+    ${s(p, "supplier-list")} { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; width: 0; min-width: 100%; overflow: hidden; }`;
 }
 
 // Helper: build a class selector with optional prefix
