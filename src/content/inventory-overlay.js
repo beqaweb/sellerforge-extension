@@ -201,7 +201,7 @@ async function fetchSupplierData(el, url) {
       const priceEl = document.createElement("span");
       priceEl.className = "sf-sp-price";
       priceEl.title = "Click to copy";
-      priceEl.textContent = d.price;
+      priceEl.textContent = `$${d.price}`;
       priceEl.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();

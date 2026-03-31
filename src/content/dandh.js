@@ -1,16 +1,34 @@
 import { MSG, log } from "../shared/constants";
+import { COLORS } from "./styles";
 
 const SAS_ICON_URL =
   "chrome-extension://kidmffepbniamfbibhfgdakkggchipjl/images/sas-logo2-32.png";
 
+const STYLE_ID = "sf-dandh-styles";
+
+function injectStyles() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  const c = COLORS;
+  style.textContent = `
+    .sf-sas-wrapper { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+    .sf-sas-icon { width: 20px; height: 20px; cursor: pointer; display: block; }
+    .sf-sas-upc { font-size: 12px; color: ${c.muted}; display: none; }
+    .sf-sas-upc.sf-sas-upc-visible { display: inline; }
+  `;
+  document.head.appendChild(style);
+}
+
 function init() {
+  injectStyles();
   const resultsList = document.querySelector("#resultsList");
   if (!resultsList) return;
 
   const items = resultsList.querySelectorAll(".single-item-display");
   items.forEach((item) => {
     const titleEl = item.querySelector(".title");
-    if (!titleEl || titleEl.querySelector(".sf-sas-icon")) return;
+    if (!titleEl || titleEl.querySelector(".sf-sas-wrapper")) return;
 
     const anchor = titleEl.querySelector("a");
     if (!anchor) return;
@@ -18,12 +36,16 @@ function init() {
     const fullUrl = new URL(anchor.getAttribute("href"), window.location.origin)
       .href;
 
+    const wrapper = document.createElement("div");
+    wrapper.className = "sf-sas-wrapper";
+
     const icon = document.createElement("img");
     icon.src = SAS_ICON_URL;
     icon.className = "sf-sas-icon";
     icon.title = "Look up on SellerAmp";
-    icon.style.cssText =
-      "width:20px;height:20px;cursor:pointer;margin-top:6px;display:block;";
+
+    const upcLabel = document.createElement("span");
+    upcLabel.className = "sf-sas-upc";
 
     icon.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -36,13 +58,17 @@ function init() {
           url: fullUrl,
         });
         const upc = response?.data?.upc;
+        const price = response?.data?.price;
         if (!upc) {
           log("No UPC found for", fullUrl);
           return;
         }
+        upcLabel.textContent = `UPC: ${upc}`;
+        upcLabel.classList.add("sf-sas-upc-visible");
         chrome.runtime.sendMessage({
           type: MSG.OPEN_SELLERAMP,
           searchTerm: upc,
+          sasCostPrice: price,
         });
       } catch (err) {
         log("SellerAmp lookup failed:", err.message);
@@ -51,7 +77,9 @@ function init() {
       }
     });
 
-    titleEl.appendChild(icon);
+    wrapper.appendChild(icon);
+    wrapper.appendChild(upcLabel);
+    titleEl.appendChild(wrapper);
   });
 }
 
