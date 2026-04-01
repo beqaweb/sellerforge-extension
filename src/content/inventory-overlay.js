@@ -17,12 +17,15 @@ const PROCESSED_ATTR = "data-sf-suppliers";
 const STYLE_ID = "sf-inventory-overlay-styles";
 
 let observer = null;
+let bodyObserver = null;
+let currentTable = null;
 
 export function initInventoryOverlay() {
   if (!isManageInventoryPage()) return;
   log("Inventory overlay: initializing");
   injectStyles();
   waitForTable();
+  watchForChanges();
 }
 
 export function destroyInventoryOverlay() {
@@ -30,6 +33,11 @@ export function destroyInventoryOverlay() {
     observer.disconnect();
     observer = null;
   }
+  if (bodyObserver) {
+    bodyObserver.disconnect();
+    bodyObserver = null;
+  }
+  currentTable = null;
 }
 
 function isManageInventoryPage() {
@@ -268,13 +276,35 @@ function waitForTable() {
 }
 
 function observeTableChanges(table) {
-  if (!table) return;
+  if (!table || table === currentTable) return;
+  currentTable = table;
 
+  if (observer) observer.disconnect();
   observer = new MutationObserver(() => {
     processTable();
   });
 
   observer.observe(table, { childList: true, subtree: true });
+}
+
+function watchForChanges() {
+  if (bodyObserver) return;
+
+  // Watch the body for table replacements (search/filter redraws the table
+  // element entirely) and SPA navigations that change the URL.
+  bodyObserver = new MutationObserver(() => {
+    const table = document.querySelector('[class*="__table-"]');
+    if (
+      table &&
+      table !== currentTable &&
+      findColumnIndex("product details") !== -1
+    ) {
+      log("Inventory overlay: table replaced, re-attaching");
+      processTable();
+      observeTableChanges(table);
+    }
+  });
+  bodyObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 function injectStyles() {
