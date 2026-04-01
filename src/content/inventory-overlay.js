@@ -229,7 +229,7 @@ async function fetchSupplierData(el, url) {
       stockDiv.className = "sf-sp-stock";
       for (const s of d.stock) {
         const stockSpan = document.createElement("span");
-        const inStock = parseInt(s.stock, 10) > 0;
+        const inStock = parseInt(s.stock.replace(/^\D+/, ""), 10) > 0;
         stockSpan.className = `sf-sp-stock-item ${inStock ? "sf-in-stock" : "sf-no-stock"}`;
 
         const locText = document.createTextNode(`${s.location}: `);

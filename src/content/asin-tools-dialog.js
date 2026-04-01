@@ -341,10 +341,12 @@ async function fetchSupplierData(el) {
     if (!response.ok || !response.data) return;
     const d = response.data;
     const stockHtml = (d.stock || [])
-      .map(
-        (s) =>
-          `<span class="sp-stock-item${parseInt(s.stock, 10) > 0 ? " in-stock" : " no-stock"}">${escapeHtml(s.location)}: <strong>${escapeHtml(s.stock)}</strong>${s.shipping_eta ? ` (${escapeHtml(s.shipping_eta)})` : ""}</span>`,
-      )
+      .map((s) => {
+        const qty = parseInt(s.stock.replace(/^\D+/, ""), 10);
+        const cls = qty > 0 ? "in-stock" : "no-stock";
+        const eta = s.shipping_eta ? ` (${escapeHtml(s.shipping_eta)})` : "";
+        return `<span class="sp-stock-item ${cls}">${escapeHtml(s.location)}: <strong>${escapeHtml(s.stock)}</strong>${eta}</span>`;
+      })
       .join("");
     if (!d.price && !stockHtml) return;
     const container = document.createElement("div");
