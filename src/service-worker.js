@@ -112,8 +112,8 @@ async function handleAsinTools(info, tab) {
     return;
   }
 
-  // Validate ASIN format (starts with B0, 10 alphanumeric characters)
-  if (!/^B0[A-Z0-9]{8}$/i.test(asin)) {
+  // Validate ASIN format (B0 + 8 alphanumeric, or 10-digit ISBN for books)
+  if (!/^(B0[A-Z0-9]{8}|\d{10})$/i.test(asin)) {
     log("Invalid ASIN format:", asin);
     chrome.tabs.sendMessage(
       tab.id,
