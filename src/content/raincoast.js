@@ -6,8 +6,8 @@ const SAS_ICON_URL =
 
 const STYLE_ID = "sf-raincoast-styles";
 
-const ITEM_SEL = 'div[id]:has(> [class*="ProductThumbImage_product_"])';
-const DETAILS_SEL = '[class*="_details_"]';
+const ITEM_SEL = 'div:has(> [class*="_product_"])';
+const DETAILS_SEL = '[class*="details_"]';
 const TITLE_SEL = "h2";
 const LINK_SEL = "h2 a";
 
