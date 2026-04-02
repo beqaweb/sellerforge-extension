@@ -12,6 +12,7 @@ module.exports = (env, argv) => {
       "service-worker": "./src/service-worker.js",
       content: "./src/content/index.js",
       "content-dandh": "./src/content/dandh.js",
+      "content-raincoast": "./src/content/raincoast.js",
     },
     output: {
       path: path.resolve(__dirname, "dist"),

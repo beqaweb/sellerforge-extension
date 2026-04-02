@@ -20,6 +20,7 @@
     "https://sellercentral.amazon.de/*",
     "https://sellercentral.amazon.ca/*",
     "https://*.dandh.ca/*",
+    "https://*.raincoastgroup.com/*",
     "https://amz-tools.shekmachine.duckdns.org/*"
   ],
   "background": {
@@ -40,6 +41,11 @@
     {
       "matches": ["https://*.dandh.ca/*"],
       "js": ["content-dandh.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.raincoastgroup.com/*"],
+      "js": ["content-raincoast.js"],
       "run_at": "document_idle"
     }
   ],
